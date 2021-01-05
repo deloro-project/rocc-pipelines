@@ -54,7 +54,7 @@ def can_import(path):
     """
     extension = path.suffix if path.suffix else ''
     extension = extension.lower()
-    able_to_import = extension in ['.pdf', '.png', '.jpg', '.jpeg']
+    able_to_import = extension in ['.pdf', '.png', '.jpg', '.jpeg', '.xml']
     requires_splitting = extension == '.pdf'
     return able_to_import, requires_splitting
 
