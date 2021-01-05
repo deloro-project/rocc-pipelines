@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from zipfile import ZipFile
 import re
 from pathlib import PurePath, Path
+from pdf2image import convert_from_bytes
 
 
 def build_output_file_name(file_name, remove_root_dir, output_root_dir):
@@ -57,10 +58,34 @@ def can_import(path):
     return able_to_import, requires_splitting
 
 
+def expand_file_name(path, page_number, image_format):
+    """Expands the file name given by path into a file name for the specified page number and image format.
+
+    Parameters
+    ----------
+    path: pathlib.Path, required
+        The file path to expand.
+    page_number: int, required
+        The page for which to expand the file name.
+    image_format: str, required
+        The extension of the expanded file name.
+
+    Returns
+    -------
+    pathlib.Path
+        The file name of the given page as an image.
+    """
+    output_path = PurePath(path.parent)
+    stem = "{}-p-{}.{}".format(path.stem, page_number, image_format)
+    return Path(path.parent, stem)
+
+
 def import_data(input_file,
                 include_files=None,
                 remove_root_dir=True,
-                output_dir='./data'):
+                output_dir='./data',
+                pdf_split_dpi=600,
+                pdf_split_format='png'):
     """Reads the contents of the input archive and prepares the files for import.
 
     Parameters
@@ -77,6 +102,10 @@ def import_data(input_file,
         each file contained in the input archive. Default is True.
     output_dir: str, optional
         Specifies the root output directory. Default is './data'.
+    pdf_split_dpi: integer, optional
+        Specifies the DPI of the images generated from splitting pdf files. Default is 600.
+    pdf_split_format: str, optional
+        Specifies the output format of the images generated from splitting pdf files. Default is png.
     """
     logging.info("Reading contents of input file {}.".format(input_file))
 
@@ -96,11 +125,22 @@ def import_data(input_file,
                 parent_dir = Path(output_path.parent)
                 logging.info("Creating directory [{}]".format(parent_dir))
                 parent_dir.mkdir(parents=True, exist_ok=True)
+
+                payload = zip_archive.read(f)
                 if requires_splitting:
-                    logging.info("File [{}] requires splitting.".format(f))
+                    logging.info("Splitting file [{}] into images.".format(f))
+                    images = convert_from_bytes(payload,
+                                                dpi=pdf_split_dpi,
+                                                fmt=pdf_split_format)
+                    logging.info("File [{}] was split into {} images.".format(
+                        f, len(images)))
+                    for i, page in enumerate(images):
+                        image_path = expand_file_name(output_path, i,
+                                                      pdf_split_format)
+                        logging.info("Saving file [{}].".format(image_path))
+                        page.save(image_path)
                 else:
                     logging.info("Extracting to [{}].".format(output_path))
-                    payload = zip_archive.read(f)
                     output_path.write_bytes(payload)
 
 
@@ -120,6 +160,17 @@ def parse_arguments():
         '--output-dir',
         help="The root directory where to extract the contents of the archive.",
         default="./data")
+    parser.add_argument(
+        '--pdf-split-dpi',
+        help=
+        "The DPI of the images generated from splitting pdf files. Default is 600.",
+        type=int,
+        default=600)
+    parser.add_argument(
+        '--pdf-split-format',
+        help=
+        "The output format of the images generated from splitting pdf files. Default is png.",
+        default='png')
     return parser.parse_args()
 
 
