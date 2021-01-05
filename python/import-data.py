@@ -4,6 +4,7 @@ from zipfile import ZipFile
 import re
 from pathlib import PurePath, Path
 from pdf2image import convert_from_bytes
+import unidecode
 
 
 def build_output_file_name(file_name, remove_root_dir, output_root_dir):
@@ -23,7 +24,7 @@ def build_output_file_name(file_name, remove_root_dir, output_root_dir):
     pathlib.Path
         The path of the output file.
     """
-    path = PurePath(file_name)
+    path = PurePath(unidecode.unidecode(file_name))
     if remove_root_dir:
         path = PurePath(output_root_dir, *path.parts[1:])
     else:
