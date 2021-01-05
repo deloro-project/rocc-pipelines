@@ -93,8 +93,15 @@ def import_data(input_file,
                         "[{}] cannot be imported. Skipping.".format(f))
                     continue
 
+                parent_dir = Path(output_path.parent)
+                logging.info("Creating directory [{}]".format(parent_dir))
+                parent_dir.mkdir(parents=True, exist_ok=True)
                 if requires_splitting:
                     logging.info("File [{}] requires splitting.".format(f))
+                else:
+                    logging.info("Extracting to [{}].".format(output_path))
+                    payload = zip_archive.read(f)
+                    output_path.write_bytes(payload)
 
 
 def parse_arguments():
