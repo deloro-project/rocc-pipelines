@@ -59,13 +59,15 @@ def can_import(path):
     return able_to_import, requires_splitting
 
 
-def expand_file_name(path, page_number, image_format):
+def expand_file_name(path, page_tag, page_number, image_format):
     """Expands the file name given by path into a file name for the specified page number and image format.
 
     Parameters
     ----------
     path: pathlib.Path, required
         The file path to expand.
+    page_tag: str, required
+        The token used to split file name from page number.
     page_number: int, required
         The page for which to expand the file name.
     image_format: str, required
@@ -77,8 +79,9 @@ def expand_file_name(path, page_number, image_format):
         The file name of the given page as an image.
     """
     output_path = PurePath(path.parent)
-    stem = "{}-p-{}.{}".format(path.stem, page_number, image_format)
-    return Path(path.parent, stem)
+    file_name = "{}-{}-{}.{}".format(path.stem, page_tag, page_number,
+                                     image_format)
+    return Path(path.parent, file_name)
 
 
 def import_data(input_file,
@@ -86,7 +89,8 @@ def import_data(input_file,
                 remove_root_dir=True,
                 output_dir='./data',
                 pdf_split_dpi=600,
-                pdf_split_format='png'):
+                pdf_split_format='png',
+                pdf_split_page_tag='pagina'):
     """Reads the contents of the input archive and prepares the files for import.
 
     Parameters
@@ -107,6 +111,8 @@ def import_data(input_file,
         Specifies the DPI of the images generated from splitting pdf files. Default is 600.
     pdf_split_format: str, optional
         Specifies the output format of the images generated from splitting pdf files. Default is png.
+    pdf_split_page_tag: stri, optional
+        Specifies the token that joins the PDF file name and the page number. Default is 'pagina'.
     """
     logging.info("Reading contents of input file {}.".format(input_file))
 
@@ -136,7 +142,8 @@ def import_data(input_file,
                     logging.info("File [{}] was split into {} images.".format(
                         f, len(images)))
                     for i, page in enumerate(images):
-                        image_path = expand_file_name(output_path, i,
+                        image_path = expand_file_name(output_path,
+                                                      pdf_split_page_tag, i,
                                                       pdf_split_format)
                         logging.info("Saving file [{}].".format(image_path))
                         page.save(image_path)
@@ -172,6 +179,11 @@ def parse_arguments():
         help=
         "The output format of the images generated from splitting pdf files. Default is png.",
         default='png')
+    parser.add_argument(
+        '--pdf-split-page-tag',
+        help=
+        "Specifies the token that joins the PDF file name and the page number. Default is 'pagina'.",
+        default='pagina')
     return parser.parse_args()
 
 
