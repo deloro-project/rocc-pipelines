@@ -141,9 +141,10 @@ def import_data(input_file,
                                                 fmt=pdf_split_format)
                     logging.info("File [{}] was split into {} images.".format(
                         f, len(images)))
-                    for i, page in enumerate(images):
+                    for page_number, page in enumerate(images):
                         image_path = expand_file_name(output_path,
-                                                      pdf_split_page_tag, i,
+                                                      pdf_split_page_tag,
+                                                      page_number + 1,
                                                       pdf_split_format)
                         logging.info("Saving file [{}].".format(image_path))
                         page.save(image_path)
