@@ -29,7 +29,7 @@ def build_output_file_name(file_name, remove_root_dir, output_root_dir):
         path = output_root_dir / path
 
     def normalize(path):
-        path = re.sub(r'[^a-z.0-9]+', '-', path, flags=re.IGNORECASE)
+        path = re.sub(r'[^a-z/.0-9]+', '-', path, flags=re.IGNORECASE)
         return path.lower()
 
     path = Path(*[normalize(segment) for segment in path.parts])
