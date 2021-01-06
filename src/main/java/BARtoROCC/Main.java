@@ -66,6 +66,7 @@ public class Main {
                         ));
                     }
                     myInputBarList.add(new barOutObject(
+                            file.getName(),
                             barInput.getRecord().getDatafield().get(i).getTag(),
                             barInput.getRecord().getDatafield().get(i).getInd1(),
                             barInput.getRecord().getDatafield().get(i).getInd2(),

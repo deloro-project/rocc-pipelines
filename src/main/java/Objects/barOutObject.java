@@ -4,10 +4,19 @@ import java.util.ArrayList;
 
 public class barOutObject {
 
+    private String fileName;
     private String tag;
     private String ind1;
     private String ind2;
     private ArrayList<subFieldObject> subFieldList;
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
 
     public String getTag() {
         return tag;
@@ -41,7 +50,8 @@ public class barOutObject {
         this.subFieldList = subFieldList;
     }
 
-    public barOutObject(String tag, String ind1, String ind2, ArrayList<subFieldObject> subFieldList) {
+    public barOutObject(String fileName, String tag, String ind1, String ind2, ArrayList<subFieldObject> subFieldList) {
+        this.fileName = fileName;
         this.tag = tag;
         this.ind1 = ind1;
         this.ind2 = ind2;
