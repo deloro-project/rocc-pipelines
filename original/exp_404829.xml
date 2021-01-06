@@ -1,0 +1,146 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+  <collection xmlns="http://www.loc.gov/MARC21/slim"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.loc.gov/MARC21/slim
+http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">
+    <record xmlns="http://www.loc.gov/MARC21/slim"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.loc.gov/MARC21/slim
+http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd">
+      <leader>     nam0 2200      450</leader>
+      <controlfield tag="FMT">BK</controlfield>
+      <controlfield tag="LDR">     nam0 2200      450</controlfield>
+      <controlfield tag="001">000404829</controlfield>
+      <controlfield tag="005">20161220161935.0</controlfield>
+      <datafield tag="100" ind1=" " ind2=" ">
+        <subfield code="a">20161219d1682----km^y0ruma0103^^^^ca</subfield>
+      </datafield>
+      <datafield tag="101" ind1="0" ind2=" ">
+        <subfield code="a">rum</subfield>
+      </datafield>
+      <datafield tag="102" ind1=" " ind2=" ">
+        <subfield code="a">RO</subfield>
+      </datafield>
+      <datafield tag="200" ind1="1" ind2=" ">
+        <subfield code="a">Viaţa şi traiul sfinţiei sale părintelui nostru Nifon, Patriarhul Ţarigradului, care au strălucit între multe patemi şi ispite în Ţarigrad şi în Ţara Muntenească</subfield>
+        <subfield code="f">scrisă de chir Gavriil protul, adecă mai marele Sfetagorei</subfield>
+      </datafield>
+      <datafield tag="210" ind1=" " ind2=" ">
+        <subfield code="a">Schitul Trivale</subfield>
+        <subfield code="d">1682</subfield>
+      </datafield>
+      <datafield tag="215" ind1=" " ind2=" ">
+        <subfield code="a">53 f.</subfield>
+        <subfield code="d">203 x 143 mm</subfield>
+      </datafield>
+      <datafield tag="303" ind1=" " ind2=" ">
+        <subfield code="a">Text cu cerneală neagră, titlul, notaţiile marginale şi iniţiale cu roşu; frontispiciu în peniţă (f. 2).</subfield>
+      </datafield>
+      <datafield tag="303" ind1=" " ind2=" ">
+        <subfield code="a">Scriere semiuncială; caractere de mai multe mărimi.</subfield>
+      </datafield>
+      <datafield tag="303" ind1=" " ind2=" ">
+        <subfield code="a">Numerotare veche cu slovocifre (ff. 1 - 52); textul manuscrisului începe la f. 2 în numerotarea mecanică.</subfield>
+      </datafield>
+      <datafield tag="303" ind1=" " ind2=" ">
+        <subfield code="a">7 caiete quaternion, numerotate; incomplete: caietul 1 (5 file), caietul 7 (7 file).</subfield>
+      </datafield>
+      <datafield tag="303" ind1=" " ind2=" ">
+        <subfield code="a">Incipit: &quot;Blagoslovit Dumnezeu carele au dat noao a înţeleage ...&quot; (f. 2r); excipit (Viaţa sf. Nifon): &quot;... carele va lua avuţie striină să o ascunză în mănăstire acela să fie proclet şi anathema. Amin. Amin. Amin.&quot; (f. 43); excipit (al manuscrisului): &quot;... şi nu lepăda învăţăturile maicii tale.&quot; (f. 53v)</subfield>
+      </datafield>
+      <datafield tag="310" ind1=" " ind2=" ">
+        <subfield code="a">Legătură nouă în piele cu ornamente aurite şi supralibrosul lui Iosif Naniescu pe coperta posterioară (1888).</subfield>
+      </datafield>
+      <datafield tag="314" ind1=" " ind2=" ">
+        <subfield code="a">Însemnare a copistului, referitoare la locul şi data copierii manuscrisului (f. 51r): &quot;Să să ştie că această carte m-am ostenit eu, mult păcătosul robul lui Domnului Dumnezeului nostru lui Iisus Hristos, Ioan ermonah ot Bistriţ, de o am scris, cându am fost egumen la schitul părintelui Varlaam mitropolitul, care schit să chiamă Trivale, de lângă Piteşti, domnind preabunul şi preacreştinul domn a toată Ţara Rumânească Io Şerban Voevod i mitropolit chir Theodosie. Noemvrie 4 dni, vŭ tečenie lĕta 7191 (1682). Şi o am dat sfintei mănăstiri Bistriţei&quot;.</subfield>
+      </datafield>
+      <datafield tag="315" ind1=" " ind2=" ">
+        <subfield code="a">Hârtie cu filigran semicerc cu motive vegetale şi stea (ff. 18, 19, 24, 26, 27, 32, 34, 35, 37, 39, 42, 43) şi (contramarcă?) literele &quot;P A&quot; dispuse simetric faţă de o linie terminată cu treflă (ff. 21, 22, 23, 33, 38).</subfield>
+      </datafield>
+      <datafield tag="317" ind1=" " ind2=" ">
+        <subfield code="a">Pecetea în fum a lui Ilarion ieromonah şi însemnarea &quot;A Mănăstirii Bistriţii&quot; (f. 3).</subfield>
+      </datafield>
+      <datafield tag="321" ind1="1" ind2=" ">
+        <subfield code="a">Ştrempel, Gabriel, Catalogul manuscriselor româneşti din B. A. R. vol. 1, 1978, p. 117.</subfield>
+      </datafield>
+      <datafield tag="321" ind1="1" ind2=" ">
+        <subfield code="a">Ştrempel, Gabriel, Copişti de manuscrise româneşti până la 1800, vol. I, 1959, p. 117.</subfield>
+      </datafield>
+      <datafield tag="327" ind1=" " ind2=" ">
+        <subfield code="a">Viaţa Sf. Nifon ..., ff. 1 - 39v.</subfield>
+      </datafield>
+      <datafield tag="327" ind1=" " ind2=" ">
+        <subfield code="a">Pisaniia Mănăstirii Argeşului, ff. 39 - 43r.</subfield>
+      </datafield>
+      <datafield tag="327" ind1=" " ind2=" ">
+        <subfield code="a">Cuvânt de învăţătură al bunului creştin Domn Neagoe Voivod, domnul Ungrovlahi&lt;i&gt;i, cătră două slugi credincioase ale sale şi dragi, carele să lepădară de lume şi să deaderă vieţii călugăreşti, ff. 43r - 51r.</subfield>
+      </datafield>
+      <datafield tag="500" ind1="1" ind2="0">
+        <subfield code="a">Viaţa Sf. Nifon, Patriarhul Ţarigradului, 1682</subfield>
+      </datafield>
+      <datafield tag="600" ind1=" " ind2="0">
+        <subfield code="a">Nifon</subfield>
+        <subfield code="c">sfânt</subfield>
+        <subfield code="c">Patriarh al Constantinopolului</subfield>
+        <subfield code="f">1434/1440 - 1508</subfield>
+      </datafield>
+      <datafield tag="610" ind1="0" ind2=" ">
+        <subfield code="a">Vieţi de sfinţi</subfield>
+      </datafield>
+      <datafield tag="610" ind1="0" ind2=" ">
+        <subfield code="a">Hagiografie</subfield>
+      </datafield>
+      <datafield tag="620" ind1=" " ind2=" ">
+        <subfield code="a">România,</subfield>
+        <subfield code="b">Ţara Românească:</subfield>
+        <subfield code="d">Schitul Trivale</subfield>
+      </datafield>
+      <datafield tag="700" ind1=" " ind2="0">
+        <subfield code="a">Gavriil</subfield>
+        <subfield code="b">Protul</subfield>
+        <subfield code="c">protos al Muntelui Athos</subfield>
+      </datafield>
+      <datafield tag="702" ind1=" " ind2="0">
+        <subfield code="a">Ioan</subfield>
+        <subfield code="c">ieromonah al măn. Bistriţa</subfield>
+        <subfield code="c">egumen al Schitului Trivale</subfield>
+        <subfield code="4">copist</subfield>
+      </datafield>
+      <datafield tag="913" ind1=" " ind2=" ">
+        <subfield code="a">manuscris</subfield>
+      </datafield>
+      <datafield tag="950" ind1=" " ind2="1">
+        <subfield code="a">Naniescu,</subfield>
+        <subfield code="b">Iosif</subfield>
+        <subfield code="c">Mitropolitul Moldovei şi Sucevei</subfield>
+        <subfield code="4">don.</subfield>
+      </datafield>
+      <datafield tag="950" ind1=" " ind2="0">
+        <subfield code="a">Ilarion</subfield>
+        <subfield code="c">monah, Episcop al Râmnicului</subfield>
+        <subfield code="4">deţ.</subfield>
+      </datafield>
+      <datafield tag="951" ind1="0" ind2="2">
+        <subfield code="a">Măn. Bistriţa</subfield>
+        <subfield code="4">deţ.</subfield>
+      </datafield>
+      <datafield tag="990" ind1=" " ind2=" ">
+        <subfield code="a">Ms. rom. 464</subfield>
+      </datafield>
+      <datafield tag="991" ind1=" " ind2=" ">
+        <subfield code="a">MEDIEVALIA</subfield>
+      </datafield>
+      <datafield tag="BAS" ind1=" " ind2=" ">
+        <subfield code="a">ORB</subfield>
+      </datafield>
+      <datafield tag="BAS" ind1=" " ind2=" ">
+        <subfield code="a">01</subfield>
+      </datafield>
+      <controlfield tag="BL ">m</controlfield>
+      <controlfield tag="OPE">Luminiţa Kövari</controlfield>
+      <datafield tag="OWN" ind1=" " ind2=" ">
+        <subfield code="a">RAL/ORB</subfield>
+      </datafield>
+    </record>
+
+</collection>  
