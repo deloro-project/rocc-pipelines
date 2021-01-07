@@ -7,6 +7,14 @@ from pdf2image import convert_from_bytes
 import unidecode
 
 
+class NormalizeRegex:
+    """Contains the RegEx patterns as constants for normalizing file and directory names, and the replacement character.
+    """
+    FILE_NAME = re.compile(r'[^a-z\/.0-9]+', flags=re.IGNORECASE)
+    DIRECTORY_NAME = re.compile(r'[^a-z\/0-9]+', flags=re.IGNORECASE)
+    REPLACEMENT = '-'
+
+
 def build_output_file_name(file_name, remove_root_dir, output_root_dir):
     """Builds a normalized output file name.
 
@@ -30,11 +38,12 @@ def build_output_file_name(file_name, remove_root_dir, output_root_dir):
     else:
         path = output_root_dir / path
 
-    def normalize(path):
-        path = re.sub(r'[^a-z/.0-9]+', '-', path, flags=re.IGNORECASE)
+    def normalize(path, pattern):
+        path = pattern.sub(NormalizeRegex.REPLACEMENT, path)
         return path.lower()
 
-    path = Path(*[normalize(segment) for segment in path.parts])
+    path = Path(normalize(str(path.parent), NormalizeRegex.DIRECTORY_NAME),
+                normalize(path.parts[-1], NormalizeRegex.FILE_NAME))
     return path
 
 
