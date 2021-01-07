@@ -5,6 +5,7 @@ import re
 from pathlib import PurePath, Path
 from pdf2image import convert_from_bytes
 import unidecode
+import tempfile
 
 
 class NormalizeRegex:
@@ -93,6 +94,43 @@ def expand_file_name(path, page_tag, page_number, image_format):
     return Path(path.parent, file_name)
 
 
+def split_pdf_file(file_name, payload, output_path, dpi, image_format,
+                   page_tag):
+    """Splits PDF file into images.
+
+    Parameters
+    ----------
+    file_name: str, required
+        The full path of the PDF file.
+    payload: iterable of bytes
+        The contents of the PDF file.
+    output_path: str, required
+        The full path of the PDF file if it were to be moved to the destination directory as is.
+        From this parameter the file names of the resulting images will be built.
+    dpi: int, required
+        The resolution of the resulting images.
+    image_format: str, required
+        The format (i.e. extension) of the resulting images.
+    page_tag: str, required
+        The token that joins the PDF file name and the page number.
+    """
+    logging.info("Splitting file [{}] into images.".format(file_name))
+    with tempfile.TemporaryDirectory() as temp_output:
+        images = convert_from_bytes(payload,
+                                    dpi=dpi,
+                                    fmt=image_format,
+                                    output_folder=temp_output,
+                                    paths_only=True)
+        logging.info("File [{}] was split into {} images.".format(
+            file_name, len(images)))
+        for page_number, page_name in enumerate(images):
+            image_path = expand_file_name(output_path, page_tag,
+                                          page_number + 1, image_format)
+            image = Path(page_name)
+            logging.info("Saving file [{}].".format(image_path))
+            image.rename(image_path)
+
+
 def import_data(input_file,
                 include_files=None,
                 remove_root_dir=True,
@@ -144,19 +182,8 @@ def import_data(input_file,
 
                 payload = zip_archive.read(f)
                 if requires_splitting:
-                    logging.info("Splitting file [{}] into images.".format(f))
-                    images = convert_from_bytes(payload,
-                                                dpi=pdf_split_dpi,
-                                                fmt=pdf_split_format)
-                    logging.info("File [{}] was split into {} images.".format(
-                        f, len(images)))
-                    for page_number, page in enumerate(images):
-                        image_path = expand_file_name(output_path,
-                                                      pdf_split_page_tag,
-                                                      page_number + 1,
-                                                      pdf_split_format)
-                        logging.info("Saving file [{}].".format(image_path))
-                        page.save(image_path)
+                    split_pdf_file(f, payload, output_path, pdf_split_dpi,
+                                   pdf_split_format, pdf_split_page_tag)
                 else:
                     logging.info("Extracting to [{}].".format(output_path))
                     output_path.write_bytes(payload)
