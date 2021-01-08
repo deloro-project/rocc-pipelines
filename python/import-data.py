@@ -75,7 +75,7 @@ def can_import(path):
     return able_to_import, requires_splitting
 
 
-def expand_file_name(path, page_tag, page_number, image_format):
+def expand_file_name(path, page_tag, page_number, image_format, num_pages):
     """Expands the file name given by path into a file name for the specified page number and image format.
 
     Parameters
@@ -88,6 +88,8 @@ def expand_file_name(path, page_tag, page_number, image_format):
         The page for which to expand the file name.
     image_format: str, required
         The extension of the expanded file name.
+    num_pages: int, required
+        The total number of pages in the document. Used to determine the number of left-padding zeroes in the page number.
 
     Returns
     -------
@@ -95,8 +97,12 @@ def expand_file_name(path, page_tag, page_number, image_format):
         The file name of the given page as an image.
     """
     output_path = PurePath(path.parent)
-    file_name = "{}-{}-{}.{}".format(path.stem, page_tag, page_number,
-                                     image_format)
+    file_name = "{name}-{tag}-{page:0{padding}d}.{extension}".format(
+        name=path.stem,
+        tag=page_tag,
+        page=page_number,
+        extension=image_format,
+        padding=len(str(num_pages)))
     return Path(path.parent, file_name)
 
 
@@ -120,7 +126,7 @@ def split_pdf_file(file_name, payload, output_path, page_tag):
     logging.info("File [{}] has {} pages.".format(file_name, doc.pageCount))
     for page_number in range(doc.pageCount):
         image_path = expand_file_name(output_path, page_tag, page_number + 1,
-                                      Constants.IMAGE_FORMAT)
+                                      Constants.IMAGE_FORMAT, doc.pageCount)
         pix = doc[page_number].getPixmap(
             matrix=fitz.Matrix(100 / 72, 100 / 72))
         logging.info("Saving file [{}].".format(image_path))
