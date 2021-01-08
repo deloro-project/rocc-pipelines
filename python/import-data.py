@@ -8,6 +8,12 @@ import tempfile
 import fitz
 
 
+class Constants:
+    """Contains constants for the import script.
+    """
+    IMAGE_FORMAT = 'png'
+
+
 class NormalizeRegex:
     """Contains the RegEx patterns as constants for normalizing file and directory names, and the replacement character.
     """
@@ -94,8 +100,7 @@ def expand_file_name(path, page_tag, page_number, image_format):
     return Path(path.parent, file_name)
 
 
-def split_pdf_file(file_name, payload, output_path, dpi, image_format,
-                   page_tag):
+def split_pdf_file(file_name, payload, output_path, page_tag):
     """Splits PDF file into images.
 
     Parameters
@@ -107,10 +112,6 @@ def split_pdf_file(file_name, payload, output_path, dpi, image_format,
     output_path: str, required
         The full path of the PDF file if it were to be moved to the destination directory as is.
         From this parameter the file names of the resulting images will be built.
-    dpi: int, required
-        The resolution of the resulting images.
-    image_format: str, required
-        The format (i.e. extension) of the resulting images.
     page_tag: str, required
         The token that joins the PDF file name and the page number.
     """
@@ -119,19 +120,17 @@ def split_pdf_file(file_name, payload, output_path, dpi, image_format,
     logging.info("File [{}] has {} pages.".format(file_name, doc.pageCount))
     for page_number in range(doc.pageCount):
         image_path = expand_file_name(output_path, page_tag, page_number + 1,
-                                      image_format)
+                                      Constants.IMAGE_FORMAT)
         pix = doc[page_number].getPixmap(
             matrix=fitz.Matrix(100 / 72, 100 / 72))
         logging.info("Saving file [{}].".format(image_path))
-        pix.writeImage(str(image_path), image_format)
+        pix.writeImage(str(image_path), Constants.IMAGE_FORMAT)
 
 
 def import_data(input_file,
                 include_files=None,
                 remove_root_dir=True,
                 output_dir='./data',
-                pdf_split_dpi=600,
-                pdf_split_format='png',
                 pdf_split_page_tag='pagina'):
     """Reads the contents of the input archive and prepares the files for import.
 
@@ -177,8 +176,7 @@ def import_data(input_file,
 
                 payload = zip_archive.read(f)
                 if requires_splitting:
-                    split_pdf_file(f, payload, output_path, pdf_split_dpi,
-                                   pdf_split_format, pdf_split_page_tag)
+                    split_pdf_file(f, payload, output_path, pdf_split_page_tag)
                 else:
                     logging.info("Extracting to [{}].".format(output_path))
                     output_path.write_bytes(payload)
@@ -200,17 +198,6 @@ def parse_arguments():
         '--output-dir',
         help="The root directory where to extract the contents of the archive.",
         default="./data")
-    parser.add_argument(
-        '--pdf-split-dpi',
-        help=
-        "The DPI of the images generated from splitting pdf files. Default is 600.",
-        type=int,
-        default=600)
-    parser.add_argument(
-        '--pdf-split-format',
-        help=
-        "The output format of the images generated from splitting pdf files. Default is png.",
-        default='png')
     parser.add_argument(
         '--pdf-split-page-tag',
         help=
