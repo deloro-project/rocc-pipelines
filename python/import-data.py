@@ -3,9 +3,9 @@ from argparse import ArgumentParser
 from zipfile import ZipFile
 import re
 from pathlib import PurePath, Path
-from pdf2image import convert_from_bytes
 import unidecode
 import tempfile
+import fitz
 
 
 class NormalizeRegex:
@@ -115,20 +115,15 @@ def split_pdf_file(file_name, payload, output_path, dpi, image_format,
         The token that joins the PDF file name and the page number.
     """
     logging.info("Splitting file [{}] into images.".format(file_name))
-    with tempfile.TemporaryDirectory() as temp_output:
-        images = convert_from_bytes(payload,
-                                    dpi=dpi,
-                                    fmt=image_format,
-                                    output_folder=temp_output,
-                                    paths_only=True)
-        logging.info("File [{}] was split into {} images.".format(
-            file_name, len(images)))
-        for page_number, page_name in enumerate(images):
-            image_path = expand_file_name(output_path, page_tag,
-                                          page_number + 1, image_format)
-            image = Path(page_name)
-            logging.info("Saving file [{}].".format(image_path))
-            image.rename(image_path)
+    doc = fitz.open(stream=payload, filetype='pdf')
+    logging.info("File [{}] has {} pages.".format(file_name, doc.pageCount))
+    for page_number in range(doc.pageCount):
+        image_path = expand_file_name(output_path, page_tag, page_number + 1,
+                                      image_format)
+        pix = doc[page_number].getPixmap(
+            matrix=fitz.Matrix(100 / 72, 100 / 72))
+        logging.info("Saving file [{}].".format(image_path))
+        pix.writeImage(str(image_path), image_format)
 
 
 def import_data(input_file,
