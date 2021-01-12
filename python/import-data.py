@@ -22,7 +22,7 @@ class NormalizeRegex:
     FILE_NAME = re.compile(r'[^a-z\/.0-9]+', flags=re.IGNORECASE)
     DIRECTORY_NAME = re.compile(r'[^a-z\/0-9]+', flags=re.IGNORECASE)
     REPLACEMENT = '-'
-    PAGE_NUMBER = re.compile(r'(?P<page>\d+)(?:(r|v)\.)', re.MULTILINE)
+    PAGE_NUMBER = re.compile(r'(?P<page>\d+)(?:(r|v)?\.)', re.MULTILINE)
 
 
 def build_output_file_name(file_name, remove_root_dir, output_root_dir):
