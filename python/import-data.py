@@ -12,6 +12,8 @@ class Constants:
     """Contains constants for the import script.
     """
     IMAGE_FORMAT = 'png'
+    IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg']
+    IMPORT_EXTENSIONS = ['.pdf', '.xml'] + ['.png', '.jpg', '.jpeg']
 
 
 class NormalizeRegex:
@@ -70,7 +72,7 @@ def can_import(path):
     """
     extension = path.suffix if path.suffix else ''
     extension = extension.lower()
-    able_to_import = extension in ['.pdf', '.png', '.jpg', '.jpeg', '.xml']
+    able_to_import = extension in Constants.IMPORT_EXTENSIONS
     requires_splitting = extension == '.pdf'
     return able_to_import, requires_splitting
 
