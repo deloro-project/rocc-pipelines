@@ -198,7 +198,7 @@ def import_data(input_file,
         Specifies the token that joins the PDF file name and the page number. Default is 'pagina'.
     """
     logging.info("Reading contents of input file {}.".format(input_file))
-
+    post_process_dirs = set()
     with ZipFile(input_file) as zip_archive:
         for f in zip_archive.namelist():
             if (not include_files) or (re.search(include_files, f,
@@ -221,7 +221,11 @@ def import_data(input_file,
                     split_pdf_file(f, payload, output_path, pdf_split_page_tag)
                 else:
                     logging.info("Extracting to [{}].".format(output_path))
+                    post_process_dirs.add(str(output_path.parent))
                     output_path.write_bytes(payload)
+
+    for directory in post_process_dirs:
+        enforce_page_order(directory)
 
 
 def parse_arguments():
