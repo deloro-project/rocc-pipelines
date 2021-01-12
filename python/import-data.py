@@ -22,6 +22,7 @@ class NormalizeRegex:
     FILE_NAME = re.compile(r'[^a-z\/.0-9]+', flags=re.IGNORECASE)
     DIRECTORY_NAME = re.compile(r'[^a-z\/0-9]+', flags=re.IGNORECASE)
     REPLACEMENT = '-'
+    PAGE_NUMBER = re.compile(r'(?P<page>\d+)(?:(r|v)\.)', re.MULTILINE)
 
 
 def build_output_file_name(file_name, remove_root_dir, output_root_dir):
@@ -133,6 +134,39 @@ def split_pdf_file(file_name, payload, output_path, page_tag):
             matrix=fitz.Matrix(100 / 72, 100 / 72))
         logging.info("Saving file [{}].".format(image_path))
         pix.writeImage(str(image_path), Constants.IMAGE_FORMAT)
+
+
+def enforce_page_order(directory):
+    """Renames images into the specified directory to ensure page order is preserved.
+
+    Parameters
+    ----------
+    directory: str, required
+        The path of the directory where to rename files.
+    """
+    pattern = r"(?P<page>\d+)(?:\.)"
+
+    logging.info("Enforcing page order in directory [{}]".format(directory))
+    path = Path(directory)
+    # Assuming a single image type in each directory
+    pages = [
+        f for f in path.iterdir() if f.suffix in Constants.IMAGE_EXTENSIONS
+    ]
+
+    num_pages = len(pages)
+    logging.info("Found {} pages in directory [{}]".format(
+        num_pages, directory))
+    padding = len(str(num_pages))
+    for page in pages:
+        page_number = NormalizeRegex.PAGE_NUMBER.search(str(page))
+        page_number = int(page_number.group('page'))
+        name = re.sub(
+            pattern,
+            "{page_number:0{padding}d}.".format(page_number=page_number,
+                                                padding=padding), str(page),
+            re.MULTILINE)
+        logging.info("Renaming file [{}] to [{}]".format(str(page), name))
+        page.rename(name)
 
 
 def import_data(input_file,
