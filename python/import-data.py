@@ -6,6 +6,7 @@ from pathlib import PurePath, Path
 import unidecode
 import tempfile
 import fitz
+from PIL import Image
 
 
 class Constants:
@@ -170,6 +171,39 @@ def enforce_page_order(directory):
         page.rename(name)
 
 
+def convert_images_to_png(directory):
+    """Converts the images from the specified directory into PNG format.
+
+    Parameters
+    ----------
+    directory: str, required
+        The path of the directory where to convert images.
+    """
+    logging.info(
+        "Converting images to PNG format in directory {}.".format(directory))
+    path = Path(directory)
+    images = [
+        img for img in path.iterdir()
+        if img.suffix in Constants.CONVERT_EXTENSIONS
+    ]
+
+    num_images = len(images)
+    if num_images == 0:
+        logging.info("No images found for conversion in directory {}.".format(
+            directory))
+        return
+
+    logging.info("Found {} images to convert in directory {}.".format(
+        num_images, directory))
+    for image in images:
+        logging.info("Converting image [{}] to PNG format.".format(image))
+        name = Path(directory, "{}.{}".format(image.stem,
+                                              Constants.IMAGE_FORMAT))
+        img = Image.open(str(image))
+        img.save(str(name))
+        image.unlink()
+
+
 def import_data(input_file,
                 include_files=None,
                 remove_root_dir=True,
@@ -227,6 +261,7 @@ def import_data(input_file,
 
     for directory in post_process_dirs:
         enforce_page_order(directory)
+        convert_images_to_png(directory)
 
 
 def parse_arguments():
