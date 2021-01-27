@@ -204,6 +204,47 @@ def convert_images_to_png(directory):
         image.unlink()
 
 
+def process_archive_content_file(zip_archive, file_name, remove_root_dir,
+                                 output_dir, pdf_split_page_tag,
+                                 post_process_dirs):
+    """Processes a file from the archive.
+
+    Parameters
+    ----------
+    zip_archive: ZipFile, required
+        The zip archive containing the file to process.
+    file_name: str, required
+        The file to process.
+    remove_root_dir: boolean, required
+        Specifies whether to remove the root directory from the path of the file.
+    output_dir: str, required
+        Specifies the root output directory.
+    pdf_split_page_tag: str, required
+        Specifies the token that joins the PDF file name and the page number.
+    post_process_dirs: set of str
+        The set where to add each directory that should be scheduled for post processing.
+    """
+    logging.info("Processing {}.".format(file_name))
+    output_path = build_output_file_name(file_name, remove_root_dir,
+                                         output_dir)
+    is_importable, requires_splitting = can_import(output_path)
+    if not is_importable:
+        logging.info("[{}] cannot be imported. Skipping.".format(file_name))
+        return
+
+    parent_dir = Path(output_path.parent)
+    logging.info("Creating directory [{}]".format(parent_dir))
+    parent_dir.mkdir(parents=True, exist_ok=True)
+
+    payload = zip_archive.read(file_name)
+    if requires_splitting:
+        split_pdf_file(file_name, payload, output_path, pdf_split_page_tag)
+    else:
+        logging.info("Extracting to [{}].".format(output_path))
+        post_process_dirs.add(str(output_path.parent))
+        output_path.write_bytes(payload)
+
+
 def import_data(input_file,
                 include_files=None,
                 remove_root_dir=True,
