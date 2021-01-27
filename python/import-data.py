@@ -14,6 +14,7 @@ class Constants:
     IMAGE_FORMAT = 'png'
     IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg']
     IMPORT_EXTENSIONS = ['.pdf', '.xml'] + ['.png', '.jpg', '.jpeg']
+    CONVERT_EXTENSIONS = ['.jpg', '.jpeg']
 
 
 class NormalizeRegex:
