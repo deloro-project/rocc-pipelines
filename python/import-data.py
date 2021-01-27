@@ -309,6 +309,7 @@ def parse_arguments():
     parser = ArgumentParser()
 
     parser.add_argument('--input-file',
+                        action='append',
                         help="Full path of the input archive (zip) file.")
     parser.add_argument('--include-files',
                         help="The regex pattern for files to include")
