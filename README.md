@@ -89,3 +89,8 @@ In this case, `uncial` is a regex pattern; you can specify more complex patterns
 ```sh
 python import-data.py --input-file ~/Downloads/Data.zip --output-dir /data/rocc --remove-root-dir --pdf-split-page-tag pag
 ```
+- To import multiple zip archives repeat the `--inpug-file` argument for each file to import:
+```sh
+python import-data.py --input-file ~/Downloads/Data-001.zip --input-file ~/Downloads/Data-002.zip --output-dir /data/rocc
+
+```
