@@ -245,7 +245,7 @@ def process_archive_content_file(zip_archive, file_name, remove_root_dir,
         output_path.write_bytes(payload)
 
 
-def import_data(input_file,
+def import_data(input_files,
                 include_files=None,
                 remove_root_dir=True,
                 output_dir='./data',
@@ -254,8 +254,8 @@ def import_data(input_file,
 
     Parameters
     ----------
-    input_file: str, required
-        The full path to the zip archive containing files to import.
+    input_files: iterable of str, required
+        The collection containing full path to the zip archives of the files to import.
     include_files: str, optional
         A RegEx pattern that in matched against the full path of each
         file within archive. If a value is provided then only files with
@@ -270,9 +270,9 @@ def import_data(input_file,
         Specifies the token that joins the PDF file name and the page number. Default is 'pagina'.
     """
     post_process_dirs = set()
-    for in_file in input_file:
-        logging.info("Reading contents of input file {}.".format(input_file))
-        with ZipFile(in_file) as zip_archive:
+    for file_path in input_files:
+        logging.info("Reading contents of input file {}.".format(input_files))
+        with ZipFile(file_path) as zip_archive:
             for f in zip_archive.namelist():
                 if (not include_files) or (re.search(include_files, f,
                                                      re.IGNORECASE)):
