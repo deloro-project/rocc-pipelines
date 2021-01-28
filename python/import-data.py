@@ -315,5 +315,6 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                         level=logging.INFO)
     args = parse_arguments()
-    import_data(**args.__dict__)
+    import_data(args.input_file, args.include_files, args.remove_root_dir,
+                args.output_dir, args.pdf_split_page_tag)
     logging.info("That's all folks!")
