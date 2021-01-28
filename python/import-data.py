@@ -266,39 +266,20 @@ def import_data(input_file,
         each file contained in the input archive. Default is True.
     output_dir: str, optional
         Specifies the root output directory. Default is './data'.
-    pdf_split_dpi: integer, optional
-        Specifies the DPI of the images generated from splitting pdf files. Default is 600.
-    pdf_split_format: str, optional
-        Specifies the output format of the images generated from splitting pdf files. Default is png.
-    pdf_split_page_tag: stri, optional
+    pdf_split_page_tag: str, optional
         Specifies the token that joins the PDF file name and the page number. Default is 'pagina'.
     """
-    logging.info("Reading contents of input file {}.".format(input_file))
     post_process_dirs = set()
-    with ZipFile(input_file) as zip_archive:
-        for f in zip_archive.namelist():
-            if (not include_files) or (re.search(include_files, f,
-                                                 re.IGNORECASE)):
-                logging.info("Processing {}.".format(f))
-                output_path = build_output_file_name(f, remove_root_dir,
-                                                     output_dir)
-                is_importable, requires_splitting = can_import(output_path)
-                if not is_importable:
-                    logging.info(
-                        "[{}] cannot be imported. Skipping.".format(f))
-                    continue
-
-                parent_dir = Path(output_path.parent)
-                logging.info("Creating directory [{}]".format(parent_dir))
-                parent_dir.mkdir(parents=True, exist_ok=True)
-
-                payload = zip_archive.read(f)
-                if requires_splitting:
-                    split_pdf_file(f, payload, output_path, pdf_split_page_tag)
-                else:
-                    logging.info("Extracting to [{}].".format(output_path))
-                    post_process_dirs.add(str(output_path.parent))
-                    output_path.write_bytes(payload)
+    for in_file in input_file:
+        logging.info("Reading contents of input file {}.".format(input_file))
+        with ZipFile(in_file) as zip_archive:
+            for f in zip_archive.namelist():
+                if (not include_files) or (re.search(include_files, f,
+                                                     re.IGNORECASE)):
+                    process_archive_content_file(zip_archive, f,
+                                                 remove_root_dir, output_dir,
+                                                 pdf_split_page_tag,
+                                                 post_process_dirs)
 
     for directory in post_process_dirs:
         enforce_page_order(directory)
