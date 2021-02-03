@@ -161,6 +161,10 @@ def enforce_page_order(directory):
     padding = len(str(num_pages))
     for page in pages:
         page_number = NormalizeRegex.PAGE_NUMBER.search(str(page))
+        if (not page_number) or (not page_number.group('page')):
+            message = "Could not determine page number for [{}.]"
+            logging.warning(message.format(str(page)))
+            continue
         page_number = int(page_number.group('page'))
         name = re.sub(
             pattern,
