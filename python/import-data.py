@@ -312,13 +312,19 @@ def parse_arguments():
         help=
         "Specifies the token that joins the PDF file name and the page number. Default is 'pagina'.",
         default='pagina')
+    parser.add_argument(
+        '--log-level',
+        help="The level of details to print when running.",
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        default='INFO')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
-    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
-                        level=logging.INFO)
     args = parse_arguments()
+    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
+                        level=getattr(logging, args.log_level))
+
     import_data(args.input_file, args.include_files, args.remove_root_dir,
                 args.output_dir, args.pdf_split_page_tag)
     logging.info("That's all folks!")
