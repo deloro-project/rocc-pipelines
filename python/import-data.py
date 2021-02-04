@@ -233,7 +233,7 @@ def process_archive_content_file(zip_archive, file_name, remove_root_dir,
                                          output_dir)
     is_importable, requires_splitting = can_import(output_path)
     if not is_importable:
-        logging.info("[{}] cannot be imported. Skipping.".format(file_name))
+        logging.warning("[{}] cannot be imported. Skipping.".format(file_name))
         return
 
     parent_dir = Path(output_path.parent)
