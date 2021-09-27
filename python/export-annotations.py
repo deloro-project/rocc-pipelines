@@ -63,18 +63,22 @@ def copy_images(image_paths, destination_dir, images_root):
         and the exported file.
     """
     name_map = {}
+    images_root = Path(images_root)
     for img_path in image_paths:
         if str(img_path) in name_map:
             continue
         try:
             src_path = Path(img_path)
-            dest_path = Path(destination_dir, *src_path.parts[3:])
+            dest_path = Path(destination_dir, *src_path.parts[len(images_root.parts):])
             logging.info('Copying page image {src} to {dest}.'.format(
                 src=str(src_path), dest=str(dest_path)))
 
             dest_dir = dest_path.parent
             dest_dir.mkdir(parents=True, exist_ok=True)
             dest_path.write_bytes(src_path.read_bytes())
+            # Make sure that the destination path does not contain output directory
+            # when adding it to the name map
+            dest_path = Path(*dest_path.parts[1:])
             name_map[str(src_path)] = str(dest_path)
         except Exception as ex:
             logging.warning("Error trying to save image {}. {}".format(
