@@ -1,14 +1,13 @@
+"""Exports letter annotations to CSV file."""
 import logging
-from argparse import ArgumentParser
-from zipfile import ZipFile
-from pathlib import PurePath, Path
+from pathlib import Path
 import argparse
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 import pandas as pd
 
 
 def load_data(server, database, user, password, port=5432):
-    """Loads the annotations from a PostgreSQL database into a padans DataFrame.
+    """Load the annotations from a PostgreSQL database into a padans DataFrame.
 
     Parameters
     ----------
@@ -45,14 +44,58 @@ def load_data(server, database, user, password, port=5432):
     return df
 
 
+def copy_images(image_paths, destination_dir, images_root):
+    """Copy page images to the destination directory.
+
+    Parameters
+    ----------
+    image_paths : iterable of str, required
+        The collection of images to copy to the destination directory.
+    destinaiton_dir: str, required
+        The destination directory.
+    images_root: str, required
+        The root directory from which to start replicating the hierarchy.
+
+    Returns:
+    -------
+    name_map: dict of (str, str)
+        A dictionary containing the mapping between the original image file
+        and the exported file.
+    """
+    name_map = {}
+    for img_path in image_paths:
+        if str(img_path) in name_map:
+            continue
+        try:
+            src_path = Path(img_path)
+            dest_path = Path(destination_dir, *src_path.parts[3:])
+            logging.info('Copying page image {src} to {dest}.'.format(
+                src=str(src_path), dest=str(dest_path)))
+
+            dest_dir = dest_path.parent
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            dest_path.write_bytes(src_path.read_bytes())
+            name_map[str(src_path)] = str(dest_path)
+        except Exception as ex:
+            logging.warning("Error trying to save image {}. {}".format(
+                img_path, ex))
+    return name_map
+
+
 def run(args):
     df = load_data(args.db_server,
                    args.db_name,
                    args.user,
                    args.password,
                    port=args.port)
-    print(df)
-    print(df.columns)
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(exist_ok=True)
+    csv_path = Path(args.output_dir, 'letter_annotations.csv')
+    name_map = copy_images(df.page_file_name.unique(), args.output_dir,
+                           args.images_root)
+    logging.info("Saving annotations to CSV file {}.".format(str(csv_path)))
+    df.page_file_name = df.page_file_name.map(name_map)
+    df.to_csv(str(csv_path))
 
 
 def parse_arguments():
@@ -79,6 +122,11 @@ def parse_arguments():
         '--output-dir',
         help="The path of the output directory. Default value is './export'.",
         default='./export')
+    parser.add_argument(
+        '--images-root',
+        help=
+        "The directory below which to replicate the directory structure in exported images.",
+        default='/mnt/deloro/')
     parser.add_argument(
         '--log-level',
         help="The level of details to print when running.",
