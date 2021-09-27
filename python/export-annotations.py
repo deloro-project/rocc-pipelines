@@ -90,7 +90,7 @@ def run(args):
                    port=args.port)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(exist_ok=True)
-    csv_path = Path(args.output_dir, 'letter_annotations.csv')
+    csv_path = Path(args.output_dir, args.annotations_file)
     name_map = copy_images(df.page_file_name.unique(), args.output_dir,
                            args.images_root)
     logging.info("Saving annotations to CSV file {}.".format(str(csv_path)))
@@ -122,6 +122,10 @@ def parse_arguments():
         '--output-dir',
         help="The path of the output directory. Default value is './export'.",
         default='./export')
+    parser.add_argument(
+        '--annotations-file',
+        help="Name of the CSV file containing the annotations.",
+        default="letter_annotations.csv")
     parser.add_argument(
         '--images-root',
         help=
