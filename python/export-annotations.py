@@ -4,6 +4,7 @@ from pathlib import Path
 import argparse
 from sqlalchemy import create_engine
 import pandas as pd
+import numpy as np
 
 
 def load_data(server, database, user, password, port=5432):
@@ -24,8 +25,8 @@ def load_data(server, database, user, password, port=5432):
 
     Returns
     -------
-    df : pandas.DataFrame
-        A dataframe containing all the annotations.
+    (letters_df, lines_df) : tuple of pandas.DataFrame
+        Dataframes containing all the annotations.
     """
     logging.info("Loading annotations from database...")
     conn_str = 'postgresql://{user}:{password}@{server}:{port}/{database}'.format(
@@ -36,12 +37,17 @@ def load_data(server, database, user, password, port=5432):
         database=database)
     engine = create_engine(conn_str)
     with engine.connect() as conn:
-        df = pd.read_sql('select * from letter_annotations', conn)
+        letters_df = pd.read_sql('select * from letter_annotations', conn)
+        lines_df = pd.read_sql('select * from line_annotations', conn)
 
-    num_rows, _ = df.shape
+    num_rows, _ = letters_df.shape
     logging.info(
-        "Finished loading {} annotations from database.".format(num_rows))
-    return df
+        "Finished loading {} letter annotations from database.".format(
+            num_rows))
+    num_rows, _ = lines_df.shape
+    logging.info("Finished loading {} lines annotations from database.".format(
+        num_rows))
+    return letters_df, lines_df
 
 
 def copy_images(image_paths, destination_dir, images_root):
@@ -69,7 +75,8 @@ def copy_images(image_paths, destination_dir, images_root):
             continue
         try:
             src_path = Path(img_path)
-            dest_path = Path(destination_dir, *src_path.parts[len(images_root.parts):])
+            dest_path = Path(destination_dir,
+                             *src_path.parts[len(images_root.parts):])
             logging.info('Copying page image {src} to {dest}.'.format(
                 src=str(src_path), dest=str(dest_path)))
 
@@ -87,22 +94,33 @@ def copy_images(image_paths, destination_dir, images_root):
 
 
 def run(args):
-    df = load_data(args.db_server,
-                   args.db_name,
-                   args.user,
-                   args.password,
-                   port=args.port)
+    """Export annotations to specified file."""
+    letters_df, lines_df = load_data(args.db_server,
+                                     args.db_name,
+                                     args.user,
+                                     args.password,
+                                     port=args.port)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(exist_ok=True)
-    csv_path = Path(args.output_dir, args.annotations_file)
-    name_map = copy_images(df.page_file_name.unique(), args.output_dir,
-                           args.images_root)
-    logging.info("Saving annotations to CSV file {}.".format(str(csv_path)))
-    df.page_file_name = df.page_file_name.map(name_map)
-    df.to_csv(str(csv_path))
+    letters_csv_path = Path(args.output_dir, args.letter_annotations_file)
+    lines_csv_path = Path(args.output_dir, args.line_annotations_file)
+    image_paths = np.union1d(letters_df.page_file_name.unique(),
+                             lines_df.page_file_name.unique())
+    name_map = copy_images(image_paths, args.output_dir, args.images_root)
+
+    logging.info("Saving letter annotations to CSV file {}.".format(
+        str(letters_csv_path)))
+    letters_df.page_file_name = letters_df.page_file_name.map(name_map)
+    letters_df.to_csv(str(letters_csv_path))
+
+    logging.info("Saving line annotations to CSV file {}.".format(
+        str(lines_csv_path)))
+    lines_df.page_file_name = lines_df.page_file_name.map(name_map)
+    lines_df.to_csv(str(lines_csv_path))
 
 
 def parse_arguments():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description='Arguments for exporting annotations.')
     parser.add_argument('--db-server',
@@ -127,14 +145,16 @@ def parse_arguments():
         help="The path of the output directory. Default value is './export'.",
         default='./export')
     parser.add_argument(
-        '--annotations-file',
+        '--letter-annotations-file',
         help="Name of the CSV file containing the annotations.",
-        default="letter_annotations.csv")
+        default="letter-annotations.csv")
     parser.add_argument(
-        '--images-root',
-        help=
-        "The directory below which to replicate the directory structure in exported images.",
-        default='/mnt/deloro/')
+        '--line-annotations-file',
+        help="Name of the CSV file containing the annotations.",
+        default="line-annotations.csv")
+    parser.add_argument('--images-root',
+                        help="Images root directory.",
+                        default='/mnt/deloro/')
     parser.add_argument(
         '--log-level',
         help="The level of details to print when running.",
