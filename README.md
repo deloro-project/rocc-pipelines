@@ -2,11 +2,6 @@
 
 The pipelines (a fancy name for scripts and tools) from this repository are used to setup the normal workflow of the ROCC.
 
-## Repository structure ##
-
-- `python` directory contains pipelines (a.k.a. scripts) written in Python
-- `java` directory contains the source code of the tools written in Java
-
 ## Running Python scripts ##
 
 The recommended way of running the python pipelines is to create a virtual environment in order to keep the server clean.
@@ -30,8 +25,7 @@ To setup the virtual environment used for running the scripts follow these steps
 To run a python script included in this repository follow these steps:
 1. Open a terminal window and navigate to the directory where the repository was cloned; e.g. `cd ~/Git/rocc-pipelines`,
 2. Activate the virtual environment mentioned earlier using `source .venv/bin/activate`
-3. Navigate to `python` directory using `cd python`,
-4. Run the script using `python <script-name> <arguments>` where:
+3. Run the script using `python <script-name> <arguments>` where:
    1. `<script-name>` is the name of the script you want to run
    2. `<arguments>` represents the arguments given to the script.
 
@@ -39,7 +33,7 @@ To run a python script included in this repository follow these steps:
 
 ### Import Data ###
 
-- **Script name**: [`import-data.py`](./python/import-data.py)
+- **Script name**: [`import-data.py`](./import-data.py)
 - **Description**: This script reads the contents of the archived Google Drive directory containing raw data and moves the data into a hierarchical structure with normalized path names. Additionally, it splits the PDF files into images of each page.
 
 #### Usage ####
@@ -97,7 +91,7 @@ python import-data.py --input-file ~/Downloads/Data-001.zip --input-file ~/Downl
 
 ### Export Annotations ###
 
-- **Script name**: [export-annotations.py](./python/export-annotations.py)
+- **Script name**: [export-annotations.py](./export-annotations.py)
 - **Description**: This script reads letter annotations from database by querying the view `letter_annotations` and prepares the annotations for export by copying the images of the annotated pages into the export directory and saving the annotations into a CSV file in the same directory.
 
 #### Usage  ####
