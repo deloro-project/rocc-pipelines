@@ -110,10 +110,8 @@ python export-annotations.py --help
 
 The output of the command above should look like the following:
 ```sh
-usage: export-annotations.py [-h] --db-server DB_SERVER --db-name DB_NAME --user USER --password
-                             PASSWORD [--port PORT] [--output-dir OUTPUT_DIR]
-                             [--annotations-file ANNOTATIONS_FILE] [--images-root IMAGES_ROOT]
-                             [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+usage: export-annotations.py [-h] --db-server DB_SERVER --db-name DB_NAME --user USER --password PASSWORD [--port PORT] [--output-dir OUTPUT_DIR] [--letter-annotations-file LETTER_ANNOTATIONS_FILE]
+                             [--line-annotations-file LINE_ANNOTATIONS_FILE] [--images-root IMAGES_ROOT] [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
 
 Arguments for exporting annotations.
 
@@ -127,11 +125,12 @@ optional arguments:
   --port PORT           The port of the database server. Default value is 5432.
   --output-dir OUTPUT_DIR
                         The path of the output directory. Default value is './export'.
-  --annotations-file ANNOTATIONS_FILE
+  --letter-annotations-file LETTER_ANNOTATIONS_FILE
+                        Name of the CSV file containing the annotations.
+  --line-annotations-file LINE_ANNOTATIONS_FILE
                         Name of the CSV file containing the annotations.
   --images-root IMAGES_ROOT
-                        The directory below which to replicate the directory structure in exported
-                        images.
+                        Images root directory.
   --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         The level of details to print when running.
 ```
@@ -153,5 +152,6 @@ where:
 The command above will export export the data into a subdirectory named `export` of the directory where the script is executed. To change the output directory specify a value for the `--output-dir` parameter.
 
 The contents of the output directory are as follows:
-- a CSV file containing letter annotations and their metadata. The default name of the file is `letter_annotations.csv`; if you want to change this name provide a value for `--annotations-file` parameter.
+- a CSV file containing letter annotations and their metadata. The default name of the file is `letter-annotations.csv`; if you want to change this name provide a value for `--letter-annotations-file` parameter.
+- a CSV file containing line annotations and their metadata. The default name of the file is `line-annotations.csv`; if you want to change this name provide a value for `--line-annotations-file` parameter.
 - several directories containing the images of the annotated pages such that the path of the images corresponds to the path specified in the column `page_image_file` from the CSV file.
