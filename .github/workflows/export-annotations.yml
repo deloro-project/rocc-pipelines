@@ -12,5 +12,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Run export script
-        run: ./run-export.sh
+      - name: Setup ssh authorization
+        env:
+          SSH_PRIVATE_KEY: ${{secrets.RSA_PRIVATE_KEY}}
+          SSH_PUBLIC_KEY: ${{secrets.RSA_PUBLIC_KEY}}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PUBLIC_KEY" | tr -d '\r' > ~/.ssh/id_rsa.pub
+          chmod 700 ~/.ssh/id_rsa.pub
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 700 ~/.ssh/id_rsa
+          eval $(ssh-agent -s)
+          echo SSH agent started
+          ssh-add ~/.ssh/id_rsa
+          ssh-keyscan -H 'github.com' >> ~/.ssh/known_hosts
+          ssh-keyscan ${{secrets.HOST}} >> ~/.ssh/known_hosts
+      - name: Update pipelines
+        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} cd rocc-pipelines && git pull
+      
