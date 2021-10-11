@@ -26,7 +26,7 @@ jobs:
           chmod 700 ~/.ssh/id_rsa
           eval $(ssh-agent -s)
           echo SSH agent started
-          ssh-add ~/.ssh/id_rsa
+          ssh-add -v ~/.ssh/id_rsa
           ssh-keyscan -H 'github.com' >> ~/.ssh/known_hosts
           ssh-keyscan ${{secrets.HOST}} >> ~/.ssh/known_hosts
       - name: Update pipelines
