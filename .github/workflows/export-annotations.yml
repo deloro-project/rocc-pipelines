@@ -12,7 +12,7 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
+    environment: production
     steps:
       - name: Setup ssh authorization
         env:
@@ -24,13 +24,11 @@ jobs:
           chmod 700 ~/.ssh/id_rsa.pub
           echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 700 ~/.ssh/id_rsa
-          head -2 ~/.ssh/id_rsa
-          head -2 ~/.ssh/id_rsa.pub
-          #eval $(ssh-agent -s)
-          #echo SSH agent started
-          #ssh-add -v ~/.ssh/id_rsa
-          #ssh-keyscan -H 'github.com' >> ~/.ssh/known_hosts
-          #ssh-keyscan ${{secrets.HOST}} >> ~/.ssh/known_hosts
+          eval $(ssh-agent -s)
+          echo SSH agent started
+          ssh-add -v ~/.ssh/id_rsa
+          ssh-keyscan -H 'github.com' >> ~/.ssh/known_hosts
+          ssh-keyscan ${{secrets.HOST}} >> ~/.ssh/known_hosts
       - name: Update pipelines
         run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} cd rocc-pipelines && git pull
       - name: Prepare export script
