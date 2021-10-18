@@ -2,6 +2,7 @@
 import argparse
 import logging
 import pandas as pd
+import numpy as np
 from sqlalchemy import create_engine
 from pathlib import Path
 
@@ -136,7 +137,15 @@ def load_transcribed_text_files(server, database, user, password, port=5432):
 
 def run(args):
     """Run the export."""
-    pass
+    lines_df = load_line_annotations(args.db_server, args.db_name, args.user,
+                                     args.password)
+    documents_df = load_transcribed_text_files(args.db_server, args.db_name,
+                                               args.user, args.password)
+    logging.info(
+        "Combining line annotations and transcribed files into single dataset")
+    data = lines_df.append(documents_df)
+    if data.shape[0] != lines_df.shape[0] + documents_df.shape[0]:
+        logging.error("Data lost when combining documents.")
 
 
 def parse_arguments():
@@ -177,7 +186,6 @@ if __name__ == '__main__':
                         level=getattr(logging, args.log_level))
     run(args)
 
-# TODO: Combine texts
 # TODO: Group texts into sliding windows of 50 years periods
 # TODO: Build lexicon for each time period
 # TODO: Save lexicon to output directory
