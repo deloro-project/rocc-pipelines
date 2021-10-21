@@ -157,6 +157,23 @@ def build_vocabulary(documents):
     return set([token.lower() for token in tokens])
 
 
+def format_period(period):
+    """Build a pretty name for a time interval.
+
+    Parameters
+    ----------
+    period: pandas.Interval, required
+        The time interval to format.
+
+    Returns
+    -------
+    name: str
+        The period name in format '<period.left>-<period.right>'.
+    """
+    left, right = int(period.left), int(period.right)
+    return '{left}-{right}'.format(left=left, right=right)
+
+
 def build_vocabulary_file_name(period):
     """Build vocabulary file name for given period.
 
@@ -170,8 +187,22 @@ def build_vocabulary_file_name(period):
     file_name: str
         The file name in format '<period.left>-<period.right>.csv'.
     """
-    left, right = int(period.left), int(period.right)
-    return '{left}-{right}.csv'.format(left=left, right=right)
+    return "{name}.csv".format(name=format_period(period))
+
+
+def to_csv(dataframe, file_name, write_header):
+    """Save provided dataframe to specified file name in CSV format.
+
+    Parameters
+    ----------
+    dataframe: pandas.DataFrame, required
+        The data frame to save.
+    file_name: str, required
+        The full name of the file where to save the dataframe.
+    write_header: bool, required
+        Specifies whether to write the header row or not.
+    """
+    dataframe.to_csv(file_name, index=False, header=write_header)
 
 
 def save_vocabulary(vocab, directory_name, file_name, write_header=False):
@@ -197,7 +228,27 @@ def save_vocabulary(vocab, directory_name, file_name, write_header=False):
         file=file_path, count=len(vocab)))
     df = pd.DataFrame(vocab, columns=['Term'])
     logging.info(df)
-    df.to_csv(file_path, index=False, header=write_header)
+    to_csv(df, file_path, write_header)
+
+
+def calculate_statistics(stats_table, vocab, period):
+    """Calculate statistics for the provided vocabulary and add them to stats table.
+
+    Parameters
+    ----------
+    stats_table: dict, required
+        The dictionary containing statistics.
+    vocab: iterable of str, required
+        The vocabulary for which to compute statistics.
+    period: pandas.Interval, required
+        The period of the vocabulary.
+    """
+    if 'period' not in stats_table:
+        stats_table['period'] = []
+    if 'num_tokens' not in stats_table:
+        stats_table['num_tokens'] = []
+    stats_table['period'].append(format_period(period))
+    stats_table['num_tokens'].append(len(vocab))
 
 
 def run(args):
@@ -214,6 +265,7 @@ def run(args):
 
     bins = np.array([1500, 1550, 1600, 1650, 1700, 1750, 1800, 1850, 1900])
     data['period'] = pd.cut(data.publishing_year, bins)
+    stats = {}
     for period in data.period.unique():
         if isinstance(period, float):
             continue
@@ -226,6 +278,15 @@ def run(args):
                         args.output_dir,
                         file_name,
                         write_header=args.write_header)
+        calculate_statistics(stats, vocab, period)
+
+    path = Path(args.output_dir)
+    path.mkdir(parents=True, exist_ok=True)
+    path = path / args.size_stats_file
+    file_name = str(path)
+    logging.info("Saving lexicon size statistics in {}.".format(file_name))
+    to_csv(pd.DataFrame(stats), file_name, True)
+    logging.info("That's all folks!")
 
 
 def parse_arguments():
@@ -256,6 +317,10 @@ def parse_arguments():
         '--write-header',
         help="Specifies whether to add header row to lexicon export files.",
         action='store_true')
+    parser.add_argument(
+        '--size-stats-file',
+        help="The name of the file containing size statistics.",
+        default="size-stats.csv")
     parser.add_argument(
         '--log-level',
         help="The level of details to print when running.",
