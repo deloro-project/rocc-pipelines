@@ -1,6 +1,7 @@
 """Exports lexicons from line annotations and transcribed files."""
 import argparse
 import logging
+import spacy
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
@@ -135,6 +136,70 @@ def load_transcribed_text_files(server, database, user, password, port=5432):
     return pd.DataFrame(documents)
 
 
+def build_vocabulary(documents):
+    """Build vocabulary from provided documents.
+
+    Parameters
+    ----------
+    documents: iterable of str, required
+        The documents from which to build vocabulary.
+
+    Returns
+    -------
+    vocabulary: set of str
+        The set of vocabulary terms.
+    """
+    nlp = spacy.load('ro_core_news_lg')
+    tokens = [
+        str(token) for text in documents for token in nlp(text=text)
+        if len(token) > 0
+    ]
+    return set([token.lower() for token in tokens])
+
+
+def build_vocabulary_file_name(period):
+    """Build vocabulary file name for given period.
+
+    Parameters
+    ----------
+    period: pandas.Interval, required
+        The time period for which to build file name.
+
+    Returns
+    -------
+    file_name: str
+        The file name in format '<period.left>-<period.right>.csv'.
+    """
+    left, right = int(period.left), int(period.right)
+    return '{left}-{right}.csv'.format(left=left, right=right)
+
+
+def save_vocabulary(vocab, directory_name, file_name, write_header=False):
+    """Save provided vocabulary in the specified file and directory.
+
+    Parameters
+    ----------
+    vocab: iterable of str, required
+        The iterable containing vocabulary terms.
+    directory_name: str, required
+        The directory where to save vocabulary.
+    file_name: str, required
+        The name of the file where to save vocabulary.
+    write_heaeder: bool, optional
+        Specifies whether the output file should contain a header row.
+        Default is False.
+    """
+    path = Path(directory_name)
+    path.mkdir(parents=True, exist_ok=True)
+    path = path / file_name
+    file_path = str(path)
+    logging.info("Saving {count} tokens from lexicon into file {file}.".format(
+        file=file_path, count=len(vocab)))
+    df = pd.DataFrame(vocab, columns=['Term'])
+    logging.info(df)
+    df.to_csv(file_path, index=False, header=write_header)
+
+
 def run(args):
     """Run the export."""
     lines_df = load_line_annotations(args.db_server, args.db_name, args.user,
@@ -146,6 +211,21 @@ def run(args):
     data = lines_df.append(documents_df)
     if data.shape[0] != lines_df.shape[0] + documents_df.shape[0]:
         logging.error("Data lost when combining documents.")
+
+    bins = np.array([1500, 1550, 1600, 1650, 1700, 1750, 1800, 1850, 1900])
+    data['period'] = pd.cut(data.publishing_year, bins)
+    for period in data.period.unique():
+        if isinstance(period, float):
+            continue
+
+        logging.info("Building lexicon for period {}.".format(period))
+        documents = [d for d in data[data.period == period].document]
+        vocab = build_vocabulary(documents)
+        file_name = build_vocabulary_file_name(period)
+        save_vocabulary(vocab,
+                        args.output_dir,
+                        file_name,
+                        write_header=args.write_header)
 
 
 def parse_arguments():
@@ -172,6 +252,10 @@ def parse_arguments():
         '--output-dir',
         help="The path of the output directory. Default value is './export'.",
         default='./lexii')
+    parser.add_argument(
+        '--write-header',
+        help="Specifies whether to add header row to lexicon export files.",
+        action='store_true')
     parser.add_argument(
         '--log-level',
         help="The level of details to print when running.",
