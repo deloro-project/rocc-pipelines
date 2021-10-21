@@ -149,3 +149,61 @@ The contents of the output directory are as follows:
 - a CSV file containing letter annotations and their metadata. The default name of the file is `letter-annotations.csv`; if you want to change this name provide a value for `--letter-annotations-file` parameter.
 - a CSV file containing line annotations and their metadata. The default name of the file is `line-annotations.csv`; if you want to change this name provide a value for `--line-annotations-file` parameter.
 - several directories containing the images of the annotated pages such that the path of the images corresponds to the path specified in the column `page_image_file` from the CSV file.
+
+
+### Export Lexii ###
+
+- **Script name**: [export-lexicon.py](./export-lexicon.py)
+- **Description**: This script reads line annotations from database and integral transcribed files for each collection (where available), groups data into periods of 50 years and builds lexicon for each period.
+
+#### Usage  ####
+
+To get the list of the script parameters with their description call the script with either `-h` or `--help` *after activating the virtual environment*.
+
+```sh
+python export-lexicon.py --help
+```
+
+The output of the command above should look like the following:
+```sh
+usage: export-lexicon.py [-h] --db-server DB_SERVER --db-name DB_NAME --user USER --password PASSWORD [--port PORT] [--output-dir OUTPUT_DIR] [--write-header] [--size-stats-file SIZE_STATS_FILE]
+                         [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Export lexicon
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --db-server DB_SERVER
+                        Name or IP address of the database server.
+  --db-name DB_NAME     The name of the database to connect to.
+  --user USER           The username under which to connect to the database.
+  --password PASSWORD   The password of the user.
+  --port PORT           The port of the database server. Default value is 5432.
+  --output-dir OUTPUT_DIR
+                        The path of the output directory. Default value is './export'.
+  --write-header        Specifies whether to add header row to lexicon export files.
+  --size-stats-file SIZE_STATS_FILE
+                        The name of the file containing size statistics.
+  --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        The level of details to print when running.
+```
+
+To run the script, *activate the virtual environment* and then issue the following command
+```sh
+python export-lexicon.py \
+       --db-server <database-server> \
+       --db-name <database-name> \
+       --user <username> \
+       --password <password>
+```
+where:
+- `<database-server>` is the IP Address or name of the database server,
+- `<database-name>` is the name of the PostgreSQL database containing `letter_annotations` view,
+- `<username>` is the user which has access to read rows from the view, and
+- `<password>` is the password of the above user.
+
+The command above will export export the data into a subdirectory named `lexii` of the directory where the script is executed. To change the output directory specify a value for the `--output-dir` parameter.
+
+The contents of the output directory are as follows:
+- several csv files (one per each 50 year period) containing vocabulary tokens, one per line.
+- a statistics file named `size-stats.csv` which contains the size of the vocabulary for each period; to change this name provide a value for `--size-stats-file` parameter.
