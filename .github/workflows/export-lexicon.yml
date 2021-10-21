@@ -1,4 +1,4 @@
-name: Export Annotations
+name: Export Lexicon
 
 on:
   push:
