@@ -2,6 +2,7 @@
 import argparse
 import logging
 import spacy
+import re
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
@@ -136,6 +137,36 @@ def load_transcribed_text_files(server, database, user, password, port=5432):
     return pd.DataFrame(documents)
 
 
+def is_valid_token(token):
+    """Check if token is valid.
+
+    Parameters
+    ----------
+    token: str, required
+        The token to process.
+
+    Returns
+    -------
+    is_valid: bool
+        True if token is valid; False otherwise.
+    """
+    # Remove spaces from token
+    token = token.replace(' ', '')
+    if len(token) == 0:
+        return False
+    if re.search(r'[0-9\.,?=:/"]', token):
+        return False
+    # Exclude tokens that start or end with dash '-'
+    # This usually signals that a single word was split into two lines
+    if (token[0] == '-' or token[-1] == '-'):
+        return False
+    # Exclude single-character tokens that contain various marks
+    if len(token) == 1:
+        return token in ['›', '‹', '"']
+
+    return True
+
+
 def build_vocabulary(documents):
     """Build vocabulary from provided documents.
 
@@ -152,7 +183,7 @@ def build_vocabulary(documents):
     nlp = spacy.load('ro_core_news_lg')
     tokens = [
         str(token) for text in documents for token in nlp(text=text)
-        if len(token) > 0
+        if is_valid_token(str(token))
     ]
     return set([token.lower() for token in tokens])
 
