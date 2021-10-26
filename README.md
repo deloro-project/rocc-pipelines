@@ -166,7 +166,10 @@ python export-lexicon.py --help
 
 The output of the command above should look like the following:
 ```sh
-usage: export-lexicon.py [-h] --db-server DB_SERVER --db-name DB_NAME --user USER --password PASSWORD [--port PORT] [--output-dir OUTPUT_DIR] [--write-header] [--size-stats-file SIZE_STATS_FILE]
+usage: export-lexicon.py [-h] --db-server DB_SERVER --db-name DB_NAME --user USER --password
+                         PASSWORD [--port PORT] [--output-dir OUTPUT_DIR] [--write-header]
+                         [--size-stats-file SIZE_STATS_FILE]
+                         [--terms-per-periods-file TERMS_PER_PERIODS_FILE]
                          [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
 
 Export lexicon
@@ -184,6 +187,8 @@ optional arguments:
   --write-header        Specifies whether to add header row to lexicon export files.
   --size-stats-file SIZE_STATS_FILE
                         The name of the file containing size statistics.
+  --terms-per-periods-file TERMS_PER_PERIODS_FILE
+                        The name of the file tracing lexicon terms per periods.
   --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         The level of details to print when running.
 ```
@@ -207,3 +212,4 @@ The command above will export export the data into a subdirectory named `lexii` 
 The contents of the output directory are as follows:
 - several csv files (one per each 50 year period) containing vocabulary tokens, one per line.
 - a statistics file named `size-stats.csv` which contains the size of the vocabulary for each period; to change this name provide a value for `--size-stats-file` parameter.
+- a file named `lexicon-per-periods.csv` which contains the terms that appear in more than one period and the periods they appear in; to change this name provide a value for `terms-per-periods-file` parameter.
