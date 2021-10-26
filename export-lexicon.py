@@ -236,6 +236,32 @@ def to_csv(dataframe, file_name, write_header):
     dataframe.to_csv(file_name, index=False, header=write_header)
 
 
+def save_data_frame(df, title, output_dir, file_name, write_header):
+    """Save data frame to specified path.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame, required
+        The data frame to save.
+    title: str, required
+        The title of data frame; this will be displayed in logging message.
+    output_dir: str, required
+        The parent directory of the file in which to save the data frame.
+        If directory does not exist, it will be created.
+    file_name: str, required
+        The name of the file in which to save the data frame.
+    write_header: bool, required
+        Specifies whether to write header row of the data frame or not.
+    """
+    path = Path(output_dir)
+    path.mkdir(parents=True, exist_ok=True)
+    path = path / file_name
+    file_name = str(path)
+    logging.info("Saving {what} in {where}.".format(what=title,
+                                                    where=file_name))
+    to_csv(df, file_name, write_header)
+
+
 def save_vocabulary(vocab, directory_name, file_name, write_header=False):
     """Save provided vocabulary in the specified file and directory.
 
@@ -282,6 +308,51 @@ def calculate_statistics(stats_table, vocab, period):
     stats_table['num_tokens'].append(len(vocab))
 
 
+def trace_words_in_periods(vocabs):
+    """Builds a table of common words accross periods.
+
+    Parameters
+    ----------
+    vocabs: dict of <str, set>, required
+        The vocabularies as a dictionary with key=period and value=vocabuldary.
+
+    Returns
+    -------
+    term_appearances: pandas.DataFrame
+        A dataframe containing a row for each term that appears in
+        more than one period. For each available period, the row
+        will contain True if the term appears in the lexicon of that
+        periods and False otherwise.
+    """
+    # Build the structure of the output dictionary
+    period_columns = sorted([period for period, _ in vocabs.items()])
+    columns = ['term'] + period_columns
+    data = {col: [] for col in columns}
+
+    # Build a global vocabulary containing the union of all terms
+    global_vocab = set()
+    for _, vocab in vocabs.items():
+        global_vocab = global_vocab.union(vocab)
+
+    # Iterate the global vocabulary and find the periods in which
+    # each term appears. If the term appears in two or more periods
+    # then it is added to output dictionary.
+    for term in global_vocab:
+        periods = [period for period, lexic in vocabs.items() if term in lexic]
+        if len(periods) > 1:
+            logging.info(
+                "Adding term '{}' to table of common terms.".format(term))
+            data['term'].append(term)
+            for col in period_columns:
+                data[col].append(col in periods)
+
+    term_appearances = pd.DataFrame(data)
+    num_rows, _ = term_appearances.shape
+    logging.info('Found {} common terms.'.format(num_rows))
+    logging.info(term_appearances)
+    return term_appearances
+
+
 def run(args):
     """Run the export."""
     lines_df = load_line_annotations(args.db_server, args.db_name, args.user,
@@ -296,7 +367,7 @@ def run(args):
 
     bins = np.array([1500, 1550, 1600, 1650, 1700, 1750, 1800, 1850, 1900])
     data['period'] = pd.cut(data.publishing_year, bins)
-    stats = {}
+    stats, vocabs = {}, {}
     for period in data.period.unique():
         if isinstance(period, float):
             continue
@@ -310,13 +381,15 @@ def run(args):
                         file_name,
                         write_header=args.write_header)
         calculate_statistics(stats, vocab, period)
+        vocabs[format_period(period)] = vocab
 
-    path = Path(args.output_dir)
-    path.mkdir(parents=True, exist_ok=True)
-    path = path / args.size_stats_file
-    file_name = str(path)
-    logging.info("Saving lexicon size statistics in {}.".format(file_name))
-    to_csv(pd.DataFrame(stats), file_name, True)
+    save_data_frame(pd.DataFrame(stats), 'lexicon size statistics',
+                    args.output_dir, args.size_stats_file, True)
+
+    save_data_frame(trace_words_in_periods(vocabs),
+                    'lexicon terms per periods', args.output_dir,
+                    args.terms_per_periods_file, True)
+
     logging.info("That's all folks!")
 
 
@@ -353,6 +426,10 @@ def parse_arguments():
         help="The name of the file containing size statistics.",
         default="size-stats.csv")
     parser.add_argument(
+        '--terms-per-periods-file',
+        help="The name of the file tracing lexicon terms per periods.",
+        default='lexicon-per-periods.csv')
+    parser.add_argument(
         '--log-level',
         help="The level of details to print when running.",
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
@@ -365,7 +442,3 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                         level=getattr(logging, args.log_level))
     run(args)
-
-# TODO: Group texts into sliding windows of 50 years periods
-# TODO: Build lexicon for each time period
-# TODO: Save lexicon to output directory
