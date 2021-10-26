@@ -20,6 +20,16 @@ To setup the virtual environment used for running the scripts follow these steps
 7. Optional - deactivate the environment using `deactivate`
 8. Close the terminal window.
 
+#### Important: Setting up virtual environment on production server  ####
+For some reason, when setting up virtual environment on production server `pip` fails to install package `psycopg2`.
+
+The workaround is to:
+1. Open `requirements.txt` file in any editor
+2. Comment the line containing `psycopg2` and save the file.
+3. Activate the virtual environment
+4. Run `pip install psycopg2-binary`
+5. Run `pip install -r requirements.txt`
+
 ### Running a pipeline script ###
 
 To run a python script included in this repository follow these steps:
