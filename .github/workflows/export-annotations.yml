@@ -8,9 +8,8 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   export:
-    # The type of runner that the job will run on
+    name: "Export annotations"
     runs-on: ubuntu-latest
     environment: production
     steps:
