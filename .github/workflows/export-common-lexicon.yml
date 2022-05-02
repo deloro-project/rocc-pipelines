@@ -1,4 +1,4 @@
-name: Export Lexicon
+name: Export Common Lexicon
 
 on:
   push:
