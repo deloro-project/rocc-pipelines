@@ -1,4 +1,4 @@
-"""Exports lexicons from line annotations and transcribed files."""
+"""Exports common lexicons from line annotations and transcribed files."""
 import argparse
 import logging
 import spacy
@@ -395,7 +395,7 @@ def run(args):
 
 def parse_arguments():
     """Parse command-lne arguments."""
-    parser = argparse.ArgumentParser(description='Export lexicon')
+    parser = argparse.ArgumentParser(description='Export common lexicon')
     parser.add_argument('--db-server',
                         help="Name or IP address of the database server.",
                         required=True)
