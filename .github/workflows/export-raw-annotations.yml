@@ -1,15 +1,13 @@
-name: Export Annotations
+name: Export Raw Annotations
 
 on:
   push:
     branches: [ main ]
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   export:
-    name: "Export annotations"
+    name: "Export raw annotations"
     runs-on: ubuntu-latest
     environment: production
     steps:
