@@ -2,52 +2,8 @@
 import logging
 from pathlib import Path
 import argparse
-from sqlalchemy import create_engine
-import pandas as pd
+from exportutils import load_annotations
 import numpy as np
-
-
-def load_data(server, database, user, password, port=5432):
-    """Load the annotations from a PostgreSQL database into a padans DataFrame.
-
-    Parameters
-    ----------
-    server : str, required
-        The name or IP address of the database server.
-    database : str, required
-        The name of the database containing annotations.
-    user : str, required
-        The username which is allowed to connect to the database.
-    password : str, required
-        The password of the username.
-    port : str, optional
-        The port for connecting to the database.
-
-    Returns
-    -------
-    (letters_df, lines_df) : tuple of pandas.DataFrame
-        Dataframes containing all the annotations.
-    """
-    logging.info("Loading annotations from database...")
-    conn_str = 'postgresql://{user}:{password}@{server}:{port}/{database}'.format(
-        user=user,
-        password=password,
-        server=server,
-        port=port,
-        database=database)
-    engine = create_engine(conn_str)
-    with engine.connect() as conn:
-        letters_df = pd.read_sql('select * from letter_annotations', conn)
-        lines_df = pd.read_sql('select * from line_annotations', conn)
-
-    num_rows, _ = letters_df.shape
-    logging.info(
-        "Finished loading {} letter annotations from database.".format(
-            num_rows))
-    num_rows, _ = lines_df.shape
-    logging.info("Finished loading {} lines annotations from database.".format(
-        num_rows))
-    return letters_df, lines_df
 
 
 def copy_images(image_paths, destination_dir, images_root):
@@ -83,8 +39,8 @@ def copy_images(image_paths, destination_dir, images_root):
             dest_dir = dest_path.parent
             dest_dir.mkdir(parents=True, exist_ok=True)
             dest_path.write_bytes(src_path.read_bytes())
-            # Make sure that the destination path does not contain output directory
-            # when adding it to the name map
+            # Make sure that the destination path does not contain
+            # output directory when adding it to the name map
             dest_path = Path(*dest_path.parts[1:])
             name_map[str(src_path)] = str(dest_path)
         except Exception as ex:
@@ -95,11 +51,11 @@ def copy_images(image_paths, destination_dir, images_root):
 
 def run(args):
     """Export annotations to specified file."""
-    letters_df, lines_df = load_data(args.db_server,
-                                     args.db_name,
-                                     args.user,
-                                     args.password,
-                                     port=args.port)
+    letters_df, lines_df = load_annotations(args.db_server,
+                                            args.db_name,
+                                            args.user,
+                                            args.password,
+                                            port=args.port)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(exist_ok=True)
     letters_csv_path = Path(args.output_dir, args.letter_annotations_file)
