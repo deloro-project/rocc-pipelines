@@ -47,3 +47,19 @@ def load_annotations(server, database, user, password, port=5432):
     logging.info("Finished loading {} lines annotations from database.".format(
         num_rows))
     return letters_df, lines_df
+
+
+def create_directories(*paths):
+    """Create directory structure for the specified path.
+
+    Parameters
+    ----------
+    paths: tuple of pathlib.Path, required
+        The paths for which to create directories.
+    """
+    for path in paths:
+        if path.exists():
+            continue
+
+        dest_dir = path if path.is_dir() else path.parent
+        dest_dir.mkdir(parents=True, exist_ok=True)
