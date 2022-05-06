@@ -59,7 +59,8 @@ def create_directories(*paths):
     """
     for path in paths:
         if path.exists():
+            logging.info("Path {} already exists.".format(str(path)))
             continue
 
-        dest_dir = path if path.is_dir() else path.parent
-        dest_dir.mkdir(parents=True, exist_ok=True)
+        logging.info("Creating directory {}.".format(str(path)))
+        path.mkdir(parents=True, exist_ok=True)
