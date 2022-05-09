@@ -110,6 +110,7 @@ def export_image(src_path, dest_path, width, height):
     height: int, required
         Height of the exported image.
     """
+    logging.info("Exporting image {} to {}.".format(src_path, dest_path))
     with Image.open(src_path) as source:
         destination = source.resize((width, height))
         destination.save(dest_path)
@@ -142,7 +143,9 @@ def scale_coordinates(top_left, bottom_right, original_size, export_size):
     x1, y1 = top_left
     x2, y2 = bottom_right
 
-    return (round(x1 * horiz_scale), round(y1 * vert_scale)), (round(x2 * horiz_scale), round(y2 * vert_scale))
+    return (round(x1 * horiz_scale),
+            round(y1 * vert_scale)), (round(x2 * horiz_scale),
+                                      round(y2 * vert_scale))
 
 
 def calculate_bounding_box(top_left, bottom_right, image_size):
@@ -177,8 +180,9 @@ def calculate_bounding_box(top_left, bottom_right, image_size):
     return (x_center, y_center), (box_width, box_height)
 
 
-def export_bounding_boxes(left_up_horiz, left_up_vert,
-                          right_down_horiz, right_down_vert, original_image_size, export_image_size, labels_file, label_index):
+def export_bounding_boxes(left_up_horiz, left_up_vert, right_down_horiz,
+                          right_down_vert, original_image_size,
+                          export_image_size, labels_file, label_index):
     """Export bounding boxes to the labels file.
 
     Parameters
@@ -200,12 +204,19 @@ def export_bounding_boxes(left_up_horiz, left_up_vert,
     label_index: int, required
         The label index.
     """
-    top_left, bottom_right = scale_coordinates((left_up_horiz, left_up_vert), (right_down_horiz, right_down_vert), original_image_size, export_image_size)
-    center, dimmensions = calculate_bounding_box(top_left, bottom_right, export_image_size)
+    top_left, bottom_right = scale_coordinates(
+        (left_up_horiz, left_up_vert), (right_down_horiz, right_down_vert),
+        original_image_size, export_image_size)
+    center, dimmensions = calculate_bounding_box(top_left, bottom_right,
+                                                 export_image_size)
     x_center, y_center = center
     width, height = dimmensions
     with open(labels_file, 'a') as f:
-        f.write("{label} {x} {y} {w} {h}".format(label=label_index, x=x_center, y=y_center, w=width, h=height))
+        f.write("{label} {x} {y} {w} {h}".format(label=label_index,
+                                                 x=x_center,
+                                                 y=y_center,
+                                                 w=width,
+                                                 h=height))
         f.write("\n")
 
 
@@ -230,15 +241,20 @@ def export_collection(annotations, destination_directory, original_size_dict,
     for file_name, letter, *coords in annotations:
         image_name, labels_name = get_export_file_names(file_name)
         if image_name not in original_size_dict:
-            logging.info("Exporting image {} to {}.".format(
-                file_name, image_name))
-            export_image(file_name, str(destination_directory / image_name),
-                         image_width, image_height)
-            with Image.open(file_name) as img:
-                original_size_dict[image_name] = img.size
+            try:
+                export_image(file_name,
+                             str(destination_directory / image_name),
+                             image_width, image_height)
+                with Image.open(file_name) as img:
+                    original_size_dict[image_name] = img.size
+            except (FileNotFoundError, IsADirectoryError):
+                logging.error("Could not export image {}.".format(file_name))
+                continue
         label_index = labels_map[letter]
-        export_bounding_boxes(*coords, original_size_dict[image_name], image_size,
-                              str(destination_directory / labels_name), label_index)
+        export_bounding_boxes(*coords, original_size_dict[image_name],
+                              image_size,
+                              str(destination_directory / labels_name),
+                              label_index)
 
 
 def main(args):
@@ -276,16 +292,18 @@ def main(args):
         ds = group.to_numpy()
         num_samples, _ = ds.shape
         if num_samples < 2:
-            logging.info(
+            logging.warning(
                 "There are not enough samples to split for label {}.".format(
                     letter))
             continue
 
         train, val = train_test_split(ds, test_size=0.2, random_state=2022)
         logging.info("Exporting training data.")
-        export_collection(train, train_dir, image_size_dict, args.image_size, labels_map)
+        export_collection(train, train_dir, image_size_dict, args.image_size,
+                          labels_map)
         logging.info("Exporting validation data.")
-        export_collection(val, val_dir, image_size_dict, args.image_size, labels_map)
+        export_collection(val, val_dir, image_size_dict, args.image_size,
+                          labels_map)
 
 
 def parse_arguments():
@@ -310,9 +328,10 @@ def parse_arguments():
         help="The port of the database server. Default value is 5432.",
         default="5432")
 
-    parser.add_argument('--output-dir',
-                        help="The output directory. Default value is './yolo-export'.",
-                        default='./yolo-export')
+    parser.add_argument(
+        '--output-dir',
+        help="The output directory. Default value is './yolo-export'.",
+        default='./yolo-export')
     parser.add_argument(
         '--image-size',
         help="The size of the exported images. Default is [1024, 768].",
