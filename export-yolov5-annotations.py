@@ -11,6 +11,19 @@ from PIL import Image
 
 
 def save_dataset_description(train, val, labels, yaml_file):
+    """Save dataset description to YAML file.
+
+    Parameters
+    ----------
+    train: str, required
+        The path to the training directory.
+    val: str, required
+        The path to the validation directory.
+    labels: list of str, required
+        The list of class labels.
+    yaml_file: str, required
+        The path of the output YAML file.
+    """
     # Hack: PyYaml does not quote the label names; as such
     # we have to print the labels and pass the resulting string
     with StringIO() as output:
@@ -102,7 +115,8 @@ def export_image(src_path, dest_path, width, height):
         destination.save(dest_path)
         destination.close()
 
-def scale_coordinates(top_left, bottom_right,  original_size, export_size):
+
+def scale_coordinates(top_left, bottom_right, original_size, export_size):
     """Scale provided coordinates to the size of exported image.
 
     Parameters
@@ -122,13 +136,14 @@ def scale_coordinates(top_left, bottom_right,  original_size, export_size):
         The (top-left, bottom-right) coordinates scaled from original size to the export size.
     """
     original_width, original_height = original_size
-    width, height =  export_size
-    horiz_scale = width/original_width
-    vert_scale = height/original_height
+    width, height = export_size
+    horiz_scale = width / original_width
+    vert_scale = height / original_height
     x1, y1 = top_left
     x2, y2 = bottom_right
 
-    return (round(x1 * horiz_scale), round(y1 * vert_scale)), (round(x2*horiz_scale), round(y2*vert_scale))
+    return (round(x1 * horiz_scale), round(y1 * vert_scale)), (round(x2 * horiz_scale), round(y2 * vert_scale))
+
 
 def calculate_bounding_box(top_left, bottom_right, image_size):
     """Calculate the center point and dimensions of the bounding box.
@@ -147,17 +162,17 @@ def calculate_bounding_box(top_left, bottom_right, image_size):
     (center, dimensions): tuple of (center point coordinates, dimensions of the rectangle)
         The coordinates of center point (x, y), and dimensions (width, height) of the bounding box.
     """
-    x1,y1 = top_left
+    x1, y1 = top_left
     x2, y2 = bottom_right
     width, height = image_size
 
-    x_center = round((x2-x1)/2)
-    y_center = round((y2-y1)/2)
-    x_center = x_center/width
-    y_center = y_center/height
+    x_center = round((x2 - x1) / 2)
+    y_center = round((y2 - y1) / 2)
+    x_center = x_center / width
+    y_center = y_center / height
 
-    box_width = (x2-x1)/width
-    box_height = (y2-y1)/height
+    box_width = (x2 - x1) / width
+    box_height = (y2 - y1) / height
 
     return (x_center, y_center), (box_width, box_height)
 
@@ -194,7 +209,6 @@ def export_bounding_boxes(left_up_horiz, left_up_vert,
         f.write("\n")
 
 
-
 def export_collection(annotations, destination_directory, original_size_dict,
                       image_size, labels_map):
     """Export collection of annotations to destination directory.
@@ -224,7 +238,7 @@ def export_collection(annotations, destination_directory, original_size_dict,
                 original_size_dict[image_name] = img.size
         label_index = labels_map[letter]
         export_bounding_boxes(*coords, original_size_dict[image_name], image_size,
-                           str(destination_directory / labels_name), label_index)
+                              str(destination_directory / labels_name), label_index)
 
 
 def main(args):
@@ -246,15 +260,6 @@ def main(args):
     ]]
 
     labels = list(letters_df.letter.unique())
-    # for each label in dataframe:
-    # - train, test = train_test_split
-    # - for each row in train/test:
-    #   - get image name
-    #   - copy image
-    #   - resize image
-    #   - build bounding box based on original image size
-    #   - reshape bounding box based on new image size
-    #   - append to the labels file
     logging.info("Creating export directories for letter annotations.")
     train_dir, val_dir, yaml_file = create_export_directories(
         args.output_dir, export_type='letters')
@@ -265,7 +270,7 @@ def main(args):
 
     letter_groups = letters_df.groupby(letters_df.letter)
     image_size_dict = {}
-    labels_map = {letter:idx for idx, letter in enumerate(labels)}
+    labels_map = {letter: idx for idx, letter in enumerate(labels)}
     for letter, group in letter_groups:
         logging.info("Exporting data for label {}.".format(letter))
         ds = group.to_numpy()
@@ -305,10 +310,9 @@ def parse_arguments():
         help="The port of the database server. Default value is 5432.",
         default="5432")
 
-    parser.add_argument(
-        '--output-dir',
-        help="The output directory. Default value is './yolo-export'.",
-        default='./yolo-export')
+    parser.add_argument('--output-dir',
+                        help="The output directory. Default value is './yolo-export'.",
+                        default='./yolo-export')
     parser.add_argument(
         '--image-size',
         help="The size of the exported images. Default is [1024, 768].",
