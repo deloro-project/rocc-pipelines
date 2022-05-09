@@ -250,6 +250,8 @@ def export_collection(annotations, destination_directory, original_size_dict,
             except (FileNotFoundError, IsADirectoryError):
                 logging.error("Could not export image {}.".format(file_name))
                 continue
+        if letter not in labels_map:
+            labels_map[letter] = len(labels_map)
         label_index = labels_map[letter]
         export_bounding_boxes(*coords, original_size_dict[image_name],
                               image_size,
@@ -279,14 +281,10 @@ def main(args):
     logging.info("Creating export directories for letter annotations.")
     train_dir, val_dir, yaml_file = create_export_directories(
         args.output_dir, export_type='letters')
-    logging.info(
-        "Saving letters dataset description file to {}.".format(yaml_file))
-    save_dataset_description(str(train_dir), str(val_dir), labels,
-                             str(yaml_file))
 
     letter_groups = letters_df.groupby(letters_df.letter)
     image_size_dict = {}
-    labels_map = {letter: idx for idx, letter in enumerate(labels)}
+    labels_map = {}
     for letter, group in letter_groups:
         logging.info("Exporting data for label {}.".format(letter))
         ds = group.to_numpy()
@@ -304,6 +302,11 @@ def main(args):
         logging.info("Exporting validation data.")
         export_collection(val, val_dir, image_size_dict, args.image_size,
                           labels_map)
+    labels = sorted(labels_map, key=labels_map.get)
+    logging.info(
+        "Saving letters dataset description file to {}.".format(yaml_file))
+    save_dataset_description(str(train_dir), str(val_dir), labels,
+                             str(yaml_file))
 
 
 def parse_arguments():
