@@ -35,6 +35,6 @@ jobs:
       - name: Prepare export script
         run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && chmod u+x ./export-yolov5-annotations.sh'
       - name: Run export
-        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && ./export-yolov5-annotations.sh ${{secrets.DB_SERVER}} ${{secrets.DB_NAME}} ${{secrets.DB_USERNAME}} ${{secrets.DB_PASSWORD}} ${{github.event.inputs.imageSize}} ${{github.event.inputs.imageSize}}'
+        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && ./export-yolov5-annotations.sh ${{secrets.DB_SERVER}} ${{secrets.DB_NAME}} ${{secrets.DB_USERNAME}} ${{secrets.DB_PASSWORD}} ${{github.event.inputs.imageSize}}'
       - name: Reset git changes
         run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && git checkout -- .'
