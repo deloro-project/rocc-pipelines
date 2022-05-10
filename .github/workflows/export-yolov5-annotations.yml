@@ -7,7 +7,6 @@ on:
     inputs:
       imageSize:
         description: 'Width and height of the exported images.'
-        required: true
         default: '2048'
 
 jobs:
