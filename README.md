@@ -2,6 +2,15 @@
 
 The pipelines (a fancy name for scripts and tools) from this repository are used to setup the normal workflow of the ROCC.
 
+## Prerequisites ##
+
+### Set user locale ###
+
+In order for the Python scripts to be able to work with unicode characters in command-line we need to setup the locale of the user that will run the scripts. To do so, add the following line in the `~/.bashrc` file:
+```
+export LANG=en_US.utf8
+```
+
 ## Running Python scripts ##
 
 The recommended way of running the python pipelines is to create a virtual environment in order to keep the server clean.
