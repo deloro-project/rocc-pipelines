@@ -1,0 +1,50 @@
+name: Train Letter Detection on Yolov5
+
+on:
+  workflow_dispatch:
+    inputs:
+      yoloDirectory:
+        description: 'The path of Yolo v5 repository.'
+        required: true
+      archivePath:
+        description: 'The path of the Yolo v5 export archive.'
+        required: true
+      imageSize:
+        description: 'Image size.'
+        required: true
+      epochs:
+        description: 'Number of training epochs.'
+        required: true
+      model:
+        description: 'Name of the Yolo v5 model to use.'
+        required: true
+
+jobs:
+  export:
+    name: "Train letter detection"
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Setup ssh authorization
+        env:
+          SSH_PRIVATE_KEY: ${{secrets.RSA_PRIVATE_KEY}}
+          SSH_PUBLIC_KEY: ${{secrets.RSA_PUBLIC_KEY}}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PUBLIC_KEY" | tr -d '\r' > ~/.ssh/id_rsa.pub
+          chmod 700 ~/.ssh/id_rsa.pub
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 700 ~/.ssh/id_rsa
+          eval $(ssh-agent -s)
+          echo SSH agent started
+          ssh-add -v ~/.ssh/id_rsa
+          ssh-keyscan -H 'github.com' >> ~/.ssh/known_hosts
+          ssh-keyscan ${{secrets.HOST}} >> ~/.ssh/known_hosts
+      - name: Update pipelines
+        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && git pull'
+      - name: Prepare training script
+        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && chmod u+x ./train-yolov5-letter-detection.sh'
+      - name: Run training
+        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && ./train-yolov5-letter-detection.sh ${{github.event.inputs.yoloDirectory}} ${{github.event.inputs.archivePath}} ${{github.event.inputs.imageSize}} ${{github.event.inputs.epochs}} ${{github.event.inputs.model}}'
+      - name: Reset git changes
+        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && git checkout -- .'
