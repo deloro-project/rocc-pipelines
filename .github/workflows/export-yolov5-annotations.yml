@@ -1,8 +1,6 @@
 name: Export Yolo v5 Annotations
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
     inputs:
       imageSize:
