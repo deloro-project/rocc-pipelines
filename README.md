@@ -220,3 +220,25 @@ The contents of the output directory are as follows:
 - several csv files (one per each 50 year period) containing vocabulary tokens, one per line.
 - a statistics file named `size-stats.csv` which contains the size of the vocabulary for each period; to change this name provide a value for `--size-stats-file` parameter.
 - a file named `lexicon-per-periods.csv` which contains the terms that appear in more than one period and the periods they appear in; to change this name provide a value for `terms-per-periods-file` parameter.
+
+### Train Yolo v5 detection of letters ###
+
+- **Script name**: [train-yolov5-letter-detection.sh](./train-yolov5-letter-detection.sh)
+- **Description**: This script unzips the export of letter annotations for Yolo v5 and trains a Yolo v5 model on the exported data.
+
+#### Usage ####
+
+To run the script issue the following command:
+```sh
+./train-yolov5-letter-detection.sh <yolo-directory> <archive-path> <image-size> <epochs> <model>
+```
+where:
+- `<yolo-directory>` is the path of the `yolov5` directory,
+- `<archive-path>` is the path of the zip file containing exported annotations,
+- `<image-size>` is the size of the exported images,
+- `<epochs>` is the number of epochs for training,
+- `<model>` is the name of the yolo model; can be one of:
+  - `yolov5s.pt`
+  - `yolov5m.pt`
+  - `yolov5l.pt`
+  - `yolov5x.pt`.
