@@ -9,6 +9,11 @@ MODEL=${5:-yolov5s.pt}
 
 cd $YOLO_DIR
 cd data
+
+# Remove old data if present
+rm -rf yolov5-annotations.zip yolo-export
+
+# Copy and extract training data
 cp $ARCHIVE_PATH .
 unzip yolov5-annotations.zip -d .
 
