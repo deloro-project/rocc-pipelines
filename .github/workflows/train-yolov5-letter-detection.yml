@@ -45,6 +45,6 @@ jobs:
       - name: Prepare training script
         run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && chmod u+x ./train-yolov5-letter-detection.sh'
       - name: Run training
-        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && ./train-yolov5-letter-detection.sh ${{github.event.inputs.yoloDirectory}} ${{github.event.inputs.archivePath}} ${{github.event.inputs.imageSize}} ${{github.event.inputs.epochs}} ${{github.event.inputs.model}}'
+        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && tmux new-session -d -s yolo && tmux send-keys -t yolo \'./train-yolov5-letter-detection.sh ${{github.event.inputs.yoloDirectory}} ${{github.event.inputs.archivePath}} ${{github.event.inputs.imageSize}} ${{github.event.inputs.epochs}} ${{github.event.inputs.model}}\' C-m'
       - name: Reset git changes
         run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && git checkout -- .'
