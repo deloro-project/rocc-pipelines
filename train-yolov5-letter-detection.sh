@@ -11,7 +11,7 @@ cd $YOLO_DIR
 cd data
 
 # Remove old data if present
-rm -rf yolov5-annotations.zip yolo-export
+rm -rf yolov5-annotations.zip yolo-export deloro
 
 # Copy and extract training data
 cp $ARCHIVE_PATH .
