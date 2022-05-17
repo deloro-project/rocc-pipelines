@@ -355,5 +355,3 @@ if __name__ == '__main__':
                         level=getattr(logging, args.log_level))
     main(args)
     logging.info("That's all folks!")
-    main(args)
-    logging.info("That's all folks!")
