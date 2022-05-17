@@ -5,7 +5,7 @@ on:
     inputs:
       imageSize:
         description: 'Width and height of the exported images.'
-        default: '2048'
+        required: true
       topLabels:
         description: 'Fraction of top labels to export (between 0 and 1).'
         required: true
