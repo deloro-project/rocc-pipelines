@@ -331,6 +331,10 @@ def parse_arguments():
         help="The port of the database server. Default value is 5432.",
         default="5432")
 
+    parser.add_argument('--top-labels',
+                        help="Percentage of top labels to export.",
+                        type=float,
+                        default=0.1)
     parser.add_argument(
         '--output-dir',
         help="The output directory. Default value is './yolo-export'.",
