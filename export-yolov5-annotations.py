@@ -9,6 +9,72 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 from PIL import Image
 
+RANDOM_SEED = 2022
+TEST_SIZE = 0.2
+
+
+def filter_letter_annotations(letters_df, top_size):
+    """Filter letter annotations by top number of samples.
+
+    Parameters
+    ----------
+    letters_df: pandas.DataFrame, required
+        The dataframe containing letter annotations.
+    top_size: float, required
+        The percent of top labels to return sorted by size.
+
+    Returns
+    -------
+    letters_df: pandas.DataFrame
+        The filtered dataframe.
+    """
+    logging.info("Filtering letter annotations to top {} percent.".format(
+        top_size * 100))
+    labels = list(letters_df.letter.unique())
+    _, x = train_test_split(labels,
+                            test_size=top_size,
+                            random_state=RANDOM_SEED)
+    letter_groups = letters_df.groupby(
+        letters_df.letter)['letter'].count().nlargest(len(x))
+    letter_groups = list(letter_groups.index)
+    logging.info("Only the following labels will be exported: {}.".format(
+        ', '.join(letter_groups)))
+    return letters_df[letters_df.letter.map(lambda l: l in letter_groups)]
+
+
+def load_letter_annotations(db_server,
+                            db_name,
+                            credentials,
+                            port,
+                            top_labels=None):
+    """Load letter annotations from database and optionally filters the ones with higher number of samples.
+
+    Parameters
+    ----------
+    db_server: str, required
+        The database server.
+    db_name: str, required
+        The database name.
+    credentials: tuple of (str, str), required
+        The user name and password for connecting to the database.
+    port: int, required
+        The port for database server.
+    top_labels: float between 0 and 1, optional
+        The top percent of labels to return when ordered descendingly by number of samples.
+        Default is None; when 0 or None returns all labels.
+    """
+    user, password = credentials
+    letters_df, _ = load_annotations(db_server, db_name, user, password, port)
+    letters_df = letters_df[[
+        'page_file_name', 'letter', 'left_up_horiz', 'left_up_vert',
+        'right_down_horiz', 'right_down_vert'
+    ]]
+
+    if top_labels:
+        return filter_letter_annotations(letters_df, top_labels)
+
+    return letters_df
+
 
 def save_dataset_description(train, val, labels, yaml_file):
     """Save dataset description to YAML file.
@@ -267,17 +333,9 @@ def main(args):
     args: argparse.Namespace, required
         The arguments of the script.
     """
-    letters_df, lines_df = load_annotations(args.db_server,
-                                            args.db_name,
-                                            args.user,
-                                            args.password,
-                                            port=args.port)
-    letters_df = letters_df[[
-        'page_file_name', 'letter', 'left_up_horiz', 'left_up_vert',
-        'right_down_horiz', 'right_down_vert'
-    ]]
-
-    labels = list(letters_df.letter.unique())
+    letters_df = load_letter_annotations(args.db_server, args.db_name,
+                                         (args.user, args.password), args.port,
+                                         args.top_labels)
     logging.info("Creating export directories for letter annotations.")
     train_dir, val_dir, yaml_file = create_export_directories(
         args.output_dir, export_type='letters')
@@ -295,7 +353,9 @@ def main(args):
                     letter))
             continue
 
-        train, val = train_test_split(ds, test_size=0.2, random_state=2022)
+        train, val = train_test_split(ds,
+                                      test_size=TEST_SIZE,
+                                      random_state=RANDOM_SEED)
         logging.info("Exporting training data.")
         export_collection(train, train_dir, image_size_dict, args.image_size,
                           labels_map)
