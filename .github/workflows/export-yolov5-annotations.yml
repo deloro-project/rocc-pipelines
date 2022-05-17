@@ -7,7 +7,7 @@ on:
         description: 'Width and height of the exported images.'
         default: '2048'
       topLabels:
-        description: 'Percentage of top labels to export.'
+        description: 'Fraction of top labels to export (between 0 and 1).'
         required: true
 
 jobs:
