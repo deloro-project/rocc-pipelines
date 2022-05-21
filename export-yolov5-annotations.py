@@ -7,7 +7,7 @@ from exportutils import create_directories
 from io import StringIO
 from pathlib import Path
 from sklearn.model_selection import train_test_split
-from PIL import Image
+import cv2 as cv
 
 RANDOM_SEED = 2022
 TEST_SIZE = 0.2
@@ -134,10 +134,11 @@ def create_export_directories(output_directory, export_type='letters'):
     """
     export_type = 'lines' if export_type.lower() == 'lines' else 'letters'
     export_dir = Path(args.output_dir) / export_type
+    patched_image_dir = export_dir / 'patched'
     train_dir = export_dir / 'train'
     val_dir = export_dir / 'val'
     yaml_file = export_dir / '{}.yaml'.format(export_type)
-    create_directories(train_dir, val_dir)
+    create_directories(train_dir, val_dir, patched_image_dir)
     return train_dir, val_dir, yaml_file
 
 
@@ -177,10 +178,9 @@ def export_image(src_path, dest_path, width, height):
         Height of the exported image.
     """
     logging.info("Exporting image {} to {}.".format(src_path, dest_path))
-    with Image.open(src_path) as source:
+    with cv.imread(src_path) as source:
         destination = source.resize((width, height))
-        destination.save(dest_path)
-        destination.close()
+        cv.imwrite(dest_path, destination)
 
 
 def scale_coordinates(top_left, bottom_right, original_size, export_size):
@@ -285,6 +285,8 @@ def export_bounding_boxes(left_up_horiz, left_up_vert, right_down_horiz,
                                                  h=height))
         f.write("\n")
 
+# def filter_out_unannotated_letters(left_up_horiz, left_up_vert, right_down_horiz, right_down_vert, img):
+
 
 def export_collection(annotations, destination_directory, original_size_dict,
                       image_size, labels_map):
@@ -311,8 +313,8 @@ def export_collection(annotations, destination_directory, original_size_dict,
                 export_image(file_name,
                              str(destination_directory / image_name),
                              image_width, image_height)
-                with Image.open(file_name) as img:
-                    original_size_dict[image_name] = img.size
+                with cv.imread(file_name) as img:
+                    original_size_dict[image_name] = img.shape
             except (FileNotFoundError, IsADirectoryError):
                 logging.error("Could not export image {}.".format(file_name))
                 continue
