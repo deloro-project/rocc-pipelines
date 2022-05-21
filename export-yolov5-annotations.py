@@ -134,8 +134,8 @@ def create_export_directories(output_directory, export_type='letters'):
     """
     export_type = 'lines' if export_type.lower() == 'lines' else 'letters'
     export_dir = Path(args.output_dir) / export_type
-    patched_image_dir = export_dir / 'patched'
     train_dir = export_dir / 'train'
+    patched_image_dir = train_dir / 'patched'
     val_dir = export_dir / 'val'
     yaml_file = export_dir / '{}.yaml'.format(export_type)
     create_directories(train_dir, val_dir, patched_image_dir)
@@ -181,6 +181,9 @@ def export_image(src_path, dest_path, width, height):
     with cv.imread(src_path) as source:
         destination = source.resize((width, height))
         cv.imwrite(dest_path, destination)
+        cv.imwrite(dest_path / 'patched', destination)
+
+
 
 
 def scale_coordinates(top_left, bottom_right, original_size, export_size):
