@@ -183,7 +183,7 @@ def export_image(src_path, dest_path, width, height):
         cv.imwrite(dest_path, destination)
         cv.imwrite(dest_path / 'patched', destination)
 
-
+test2
 
 
 def scale_coordinates(top_left, bottom_right, original_size, export_size):
