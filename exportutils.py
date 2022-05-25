@@ -66,6 +66,33 @@ def create_directories(*paths):
         path.mkdir(parents=True, exist_ok=True)
 
 
+def scale_point(point, original_size, export_size):
+    """Scale the given point from the original image size to the exported image size.
+
+    Parameters
+    ----------
+    point: tuple of (int, int), required
+        The point to scale.
+    original_size: tuple of (int, int), required
+        The size in pixels (w, h) of the original image.
+    export_size: tuple of (int, int), required
+        The size in pixels (w, h) of the exported (resized) image.
+
+    Returns
+    -------
+    scaled_point: tuple of (int, int)
+        The point scaled from original image size to exported image size.
+    """
+    original_width, original_height = original_size
+    export_width, export_height = export_size
+    x_scale = export_width / original_width
+    y_scale = export_height / original_height
+    x_old, y_old = point
+    x_new = x_old * x_scale
+    y_new = y_old * y_scale
+    return (round(x_new), round(y_new))
+
+
 def calculate_bounding_box(top_left, bottom_right, image_size):
     """Calculate the center point and dimensions of the bounding box.
 

@@ -3,7 +3,7 @@
 import argparse
 import logging
 from exportutils import load_annotations
-from exportutils import create_directories
+from exportutils import create_directories, scale_point, calculate_bounding_box
 from io import StringIO
 from pathlib import Path
 from sklearn.model_selection import train_test_split
@@ -183,69 +183,6 @@ def export_image(src_path, dest_path, width, height):
         destination.close()
 
 
-def scale_coordinates(top_left, bottom_right, original_size, export_size):
-    """Scale provided coordinates to the size of exported image.
-
-    Parameters
-    ----------
-    top_left: tuple of (number, number), required
-        The (x, y) coordinates of the top-left point.
-    bottom_right: tuple of (number, number), required
-        The (x, y) coordinates of the bottom-right point.
-    original_size: tuple of (int, int), required
-        The size in pixels (w, h) of the original image.
-    export_size: tuple of (int, int), required
-        The size in pixels (w, h) of the exported (resized) image.
-
-    Returns
-    -------
-    scaled_coordinates: tuple of ((number, number), (number, number))
-        The (top-left, bottom-right) coordinates scaled from original size to the export size.
-    """
-    original_width, original_height = original_size
-    width, height = export_size
-    horiz_scale = width / original_width
-    vert_scale = height / original_height
-    x1, y1 = top_left
-    x2, y2 = bottom_right
-
-    return (round(x1 * horiz_scale),
-            round(y1 * vert_scale)), (round(x2 * horiz_scale),
-                                      round(y2 * vert_scale))
-
-
-def calculate_bounding_box(top_left, bottom_right, image_size):
-    """Calculate the center point and dimensions of the bounding box.
-
-    Parameters
-    ----------
-    top_left: tuple of (number, number), required
-        The (x, y) coordinates of the top-left point.
-    bottom_right: tuple of (number, number), required
-        The (x, y) coordinates of the bottom-right point.
-    image_size: tuple of (number, number), required
-        The size of the image (width, height).
-
-    Returns
-    -------
-    (center, dimensions): tuple of (center point coordinates, dimensions of the rectangle)
-        The coordinates of center point (x, y), and dimensions (width, height) of the bounding box.
-    """
-    x1, y1 = top_left
-    x2, y2 = bottom_right
-    width, height = image_size
-
-    x_center = round((x2 - x1) / 2)
-    y_center = round((y2 - y1) / 2)
-    x_center = x_center / width
-    y_center = y_center / height
-
-    box_width = (x2 - x1) / width
-    box_height = (y2 - y1) / height
-
-    return (x_center, y_center), (box_width, box_height)
-
-
 def export_bounding_boxes(left_up_horiz, left_up_vert, right_down_horiz,
                           right_down_vert, original_image_size,
                           export_image_size, labels_file, label_index):
@@ -270,9 +207,10 @@ def export_bounding_boxes(left_up_horiz, left_up_vert, right_down_horiz,
     label_index: int, required
         The label index.
     """
-    top_left, bottom_right = scale_coordinates(
-        (left_up_horiz, left_up_vert), (right_down_horiz, right_down_vert),
-        original_image_size, export_image_size)
+    top_left = scale_point((left_up_horiz, left_up_vert), original_image_size,
+                           export_image_size)
+    bottom_right = scale_point((right_down_horiz, right_down_vert),
+                               original_image_size, export_image_size)
     center, dimmensions = calculate_bounding_box(top_left, bottom_right,
                                                  export_image_size)
     x_center, y_center = center
