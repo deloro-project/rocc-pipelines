@@ -64,3 +64,35 @@ def create_directories(*paths):
 
         logging.info("Creating directory {}.".format(str(path)))
         path.mkdir(parents=True, exist_ok=True)
+
+
+def calculate_bounding_box(top_left, bottom_right, image_size):
+    """Calculate the center point and dimensions of the bounding box.
+
+    Parameters
+    ----------
+    top_left: tuple of (number, number), required
+        The (x, y) coordinates of the top-left point.
+    bottom_right: tuple of (number, number), required
+        The (x, y) coordinates of the bottom-right point.
+    image_size: tuple of (number, number), required
+        The size of the image (width, height).
+
+    Returns
+    -------
+    (center, dimensions): tuple of (center point coordinates, dimensions of the rectangle)
+        The coordinates of center point (x, y), and dimensions (width, height) of the bounding box.
+    """
+    x1, y1 = top_left
+    x2, y2 = bottom_right
+    width, height = image_size
+
+    x_center = x1 + (x2 - x1) / 2
+    y_center = y1 + (y2 - y1) / 2
+    x_center = x_center / width
+    y_center = y_center / height
+
+    box_width = (x2 - x1) / width
+    box_height = (y2 - y1) / height
+
+    return (x_center, y_center), (box_width, box_height)
