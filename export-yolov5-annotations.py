@@ -2,8 +2,7 @@
 """Exports letter and line annotations into Yolo v5 format."""
 import argparse
 import logging
-from exportutils import load_annotations
-from exportutils import create_directories, export_yolov5_annotation
+from utils.exportutils import load_annotations, create_directories, export_yolov5_annotation
 from io import StringIO
 from pathlib import Path
 from sklearn.model_selection import train_test_split
