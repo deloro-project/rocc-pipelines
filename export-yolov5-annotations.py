@@ -3,7 +3,7 @@
 import argparse
 import logging
 from exportutils import load_annotations
-from exportutils import create_directories, scale_point, calculate_bounding_box
+from exportutils import create_directories, export_yolov5_annotation
 from io import StringIO
 from pathlib import Path
 from sklearn.model_selection import train_test_split
@@ -183,47 +183,6 @@ def export_image(src_path, dest_path, width, height):
         destination.close()
 
 
-def export_bounding_boxes(left_up_horiz, left_up_vert, right_down_horiz,
-                          right_down_vert, original_image_size,
-                          export_image_size, labels_file, label_index):
-    """Export bounding boxes to the labels file.
-
-    Parameters
-    ----------
-    left_up_horiz: number, required
-        Coordinate of the top-left point on the X scale.
-    left_up_vert: number, required
-        Coordinate of the top-left point in the Y scale.
-    right_down_horiz: number, required
-        Coordinate of the bottom-right point on the X scale.
-    right_down_vert: number, required
-        Coordinate of the bottom-right point in the Y scale.
-    original_image_size: tuple of (int, int), required
-        The size in pixels (w, h) of the original image.
-    export_image_size: tule of (int, int), required
-        The size in pixels (w, h) of the exported (resized) image.
-    labels_file: str, required
-        The path of the file containing labels.
-    label_index: int, required
-        The label index.
-    """
-    top_left = scale_point((left_up_horiz, left_up_vert), original_image_size,
-                           export_image_size)
-    bottom_right = scale_point((right_down_horiz, right_down_vert),
-                               original_image_size, export_image_size)
-    center, dimmensions = calculate_bounding_box(top_left, bottom_right,
-                                                 export_image_size)
-    x_center, y_center = center
-    width, height = dimmensions
-    with open(labels_file, 'a') as f:
-        f.write("{label} {x} {y} {w} {h}".format(label=label_index,
-                                                 x=x_center,
-                                                 y=y_center,
-                                                 w=width,
-                                                 h=height))
-        f.write("\n")
-
-
 def export_collection(annotations, destination_directory, original_size_dict,
                       image_size, labels_map):
     """Export collection of annotations to destination directory.
@@ -257,10 +216,11 @@ def export_collection(annotations, destination_directory, original_size_dict,
         if letter not in labels_map:
             labels_map[letter] = len(labels_map)
         label_index = labels_map[letter]
-        export_bounding_boxes(*coords, original_size_dict[image_name],
-                              image_size,
-                              str(destination_directory / labels_name),
-                              label_index)
+        x1, y1, x2, y2 = *coords
+        original_image_size = original_size_dict[image_name]
+        export_yolov5_annotation(label_index, x1, y1, x2, y2,
+                                 original_image_size, image_size,
+                                 str(destination_directory / labels_name))
 
 
 def main(args):

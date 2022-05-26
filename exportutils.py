@@ -123,3 +123,45 @@ def calculate_bounding_box(top_left, bottom_right, image_size):
     box_height = (y2 - y1) / height
 
     return (x_center, y_center), (box_width, box_height)
+
+
+def export_yolov5_annotation(label_index, left_up_horiz, left_up_vert,
+                             right_down_horiz, right_down_vert,
+                             original_image_size, export_image_size,
+                             labels_file):
+    """Export annotation in Yolo v5 format to the labels file.
+
+    Parameters
+    ----------
+    label_index: int, required
+        The label index.
+    left_up_horiz: number, required
+        Coordinate of the top-left point on the X scale.
+    left_up_vert: number, required
+        Coordinate of the top-left point in the Y scale.
+    right_down_horiz: number, required
+        Coordinate of the bottom-right point on the X scale.
+    right_down_vert: number, required
+        Coordinate of the bottom-right point in the Y scale.
+    original_image_size: tuple of (int, int), required
+        The size in pixels (w, h) of the original image.
+    export_image_size: tule of (int, int), required
+        The size in pixels (w, h) of the exported (resized) image.
+    labels_file: str, required
+        The path of the file containing labels.
+    """
+    point = (left_up_horiz, left_up_vert)
+    top_left = scale_point(point, original_image_size, export_image_size)
+    point = (right_down_horiz, right_down_vert)
+    bottom_right = scale_point(point, original_image_size, export_image_size)
+    center, dimmensions = calculate_bounding_box(top_left, bottom_right,
+                                                 export_image_size)
+    x, y = center
+    w, h = dimmensions
+    with open(labels_file, 'a') as f:
+        f.write("{label} {x} {y} {w} {h}".format(label=label_index,
+                                                 x=x,
+                                                 y=y,
+                                                 w=w,
+                                                 h=h))
+        f.write("\n")
