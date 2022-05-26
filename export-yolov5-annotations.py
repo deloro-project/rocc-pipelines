@@ -215,7 +215,7 @@ def export_collection(annotations, destination_directory, original_size_dict,
         if letter not in labels_map:
             labels_map[letter] = len(labels_map)
         label_index = labels_map[letter]
-        x1, y1, x2, y2 = *coords
+        x1, y1, x2, y2 = coords
         original_image_size = original_size_dict[image_name]
         export_yolov5_annotation(label_index, x1, y1, x2, y2,
                                  original_image_size, image_size,
