@@ -4,6 +4,7 @@ import argparse
 import logging
 from pathlib import Path
 import io
+import shutil
 
 import cv2 as cv
 from sklearn.model_selection import train_test_split
@@ -262,7 +263,9 @@ def main(args):
         export_collection(val, val_dir, image_size_dict, args.image_size,
                           labels_map)
     labels = sorted(labels_map, key=labels_map.get)
+    logging.info("Blurring unmarked letters from all images.")
     blur_out_negative_samples(staging_dir, train_dir)
+    shutil.rmtree(staging_dir)
     logging.info(
         "Saving letters dataset description file to {}.".format(yaml_file))
     save_dataset_description(str(staging_dir), str(val_dir), labels,
