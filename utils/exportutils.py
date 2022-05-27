@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 """Utility functions for annotations export."""
 import logging
+import shutil
+
+import numpy as np
 from sqlalchemy import create_engine
 import pandas as pd
+import cv2 as cv
 
 
 def load_annotations(server, database, user, password, port=5432):
@@ -83,14 +87,14 @@ def scale_point(point, original_size, export_size):
     scaled_point: tuple of (int, int)
         The point scaled from original image size to exported image size.
     """
-    original_width, original_height = original_size
+    original_height, original_width, _ = original_size
     export_width, export_height = export_size
     x_scale = export_width / original_width
     y_scale = export_height / original_height
     x_old, y_old = point
     x_new = x_old * x_scale
     y_new = y_old * y_scale
-    return (round(x_new), round(y_new))
+    return round(x_new), round(y_new)
 
 
 def calculate_bounding_box(top_left, bottom_right, image_size):
@@ -154,10 +158,10 @@ def export_yolov5_annotation(label_index, left_up_horiz, left_up_vert,
     top_left = scale_point(point, original_image_size, export_image_size)
     point = (right_down_horiz, right_down_vert)
     bottom_right = scale_point(point, original_image_size, export_image_size)
-    center, dimmensions = calculate_bounding_box(top_left, bottom_right,
-                                                 export_image_size)
+    center, dimensions = calculate_bounding_box(top_left, bottom_right,
+                                                export_image_size)
     x, y = center
-    w, h = dimmensions
+    w, h = dimensions
     with open(labels_file, 'a') as f:
         f.write("{label} {x} {y} {w} {h}".format(label=label_index,
                                                  x=x,
@@ -165,3 +169,98 @@ def export_yolov5_annotation(label_index, left_up_horiz, left_up_vert,
                                                  w=w,
                                                  h=h))
         f.write("\n")
+
+
+def get_scaled_box_coords(center, box_size, img_size):
+    """
+    Scale coordinates from the YOLOv5 formate to the box like format
+
+    Returns
+    ----------
+    top left and bottom down coords of the box
+    """
+    x_center, y_center = center
+    height, width = box_size
+    img_height, img_width = img_size
+    x_center, y_center, width, height = float(x_center) * img_width, float(y_center) * img_height, float(
+        width) * img_width, float(height) * img_height
+    x1, x2 = x_center - (width // 2), x_center + (width // 2)
+    y1, y2 = y_center - (height // 2), y_center + (height // 2)
+    return int(x1), int(x2), int(y1), int(y2)
+
+
+def create_mask(top_left_corner, bottom_right_corner, img_size, padding=20):
+    """
+    This method will create a mask which will be an image with a black background and white coloring for the zone witch
+    should contain the text. We take the coords of the text zone, add some padding to make sure its mostly covered and
+    make it white.
+    """
+    x1, y1 = top_left_corner
+    x2, y2 = bottom_right_corner
+    img_height, img_width = img_size
+    mask = np.empty([img_height, img_width])
+    mask.fill(0)
+    mask[y1 - padding:y2 + padding, x1 - padding:x2 + padding] = 255
+    cv.imwrite("mask.png", mask)
+    return cv.imread("mask.png", cv.IMREAD_GRAYSCALE)
+
+
+def eliminate_all_letters_from_image(img, mask, radius=10):
+    """
+    Parameters
+    ----------
+    img: unaltered image
+    mask: mask that specifies the zone which will be eliminated
+    radius
+
+    Returns
+    -------
+    image which does not contain anymore text
+    """
+    return cv.inpaint(img, mask, radius, flags=cv.INPAINT_TELEA)
+
+
+def put_letters_back(img, letters):
+    """
+    Parameters
+    ----------
+    img: image that has all letters removed
+    letters: original boxes that need to be placed back on their initial coordinates
+
+    Returns
+    -------
+    restored image
+    """
+    for letter_img, top_left, bottom_right in letters:
+        x1, y1 = top_left
+        x2, y2 = bottom_right
+        img[y1:y2, x1:x2] = letter_img
+    return img
+
+
+def blur_out_negative_samples(staging_dir, train_dir):
+    """
+    Parameters
+    ----------
+    staging_dir: directory containing original, resized images
+    train_dir: directory where we copy the images after being cleaned of negative samples
+    """
+    for file in staging_dir.iterdir():
+        letters = []
+        if "png" in file.name:
+            img_file = f"{str(staging_dir)}/{file.name}"
+            labels_file = f"{str(staging_dir)}/{file.name[:-4]}.txt"
+            img = cv.imread(img_file)
+            original_height, original_width, _ = img.shape
+            min_x1, min_y1, max_x2, max_y2 = img.shape[1], img.shape[0], 0, 0
+            annotations = open(labels_file, "r").readlines()
+            for annot in annotations:
+                label, x_center, y_center, width, height = annot.split()
+                x1, x2, y1, y2 = get_scaled_box_coords((x_center, y_center), (height, width), img.shape[:2])
+                min_x1, min_y1, max_x2, max_y2 = min(min_x1, x1), min(min_y1, y1), max(max_x2, x2), max(max_y2, y2)
+                letters.append((img[y1:y2, x1:x2].copy(), (x1, y1), (x2, y2)))
+            mask = create_mask((min_x1, min_y1), (max_x2, max_y2), img.shape[:2])
+            img = eliminate_all_letters_from_image(img, mask)
+            img = put_letters_back(img, letters)
+            cv.imwrite(f"{str(train_dir)}/{file.name}", img)
+            shutil.copy(labels_file, f"{str(train_dir)}/{file.name[:-4]}.txt")

@@ -2,11 +2,13 @@
 """Exports letter and line annotations into Yolo v5 format."""
 import argparse
 import logging
-from utils.exportutils import load_annotations, create_directories, export_yolov5_annotation
-from io import StringIO
 from pathlib import Path
+import io
+
+import cv2 as cv
 from sklearn.model_selection import train_test_split
-from PIL import Image
+
+from utils.exportutils import load_annotations, create_directories, export_yolov5_annotation, blur_out_negative_samples
 
 RANDOM_SEED = 2022
 TEST_SIZE = 0.2
@@ -91,7 +93,7 @@ def save_dataset_description(train, val, labels, yaml_file):
     """
     # Hack: PyYaml does not quote the label names; as such
     # we have to print the labels and pass the resulting string
-    with StringIO() as output:
+    with io.StringIO() as output:
         print(labels, file=output)
         names = output.getvalue()
 
@@ -106,7 +108,7 @@ nc: {nc}
 names: {names}
 """
 
-    with open(yaml_file, 'w') as f:
+    with io.open(yaml_file, 'w', encoding="utf8") as f:
         f.write(
             yaml_content.format(train=train,
                                 val=val,
@@ -133,11 +135,12 @@ def create_export_directories(output_directory, export_type='letters'):
     """
     export_type = 'lines' if export_type.lower() == 'lines' else 'letters'
     export_dir = Path(args.output_dir) / export_type
+    staging_dir = export_dir / 'staging_dir'
     train_dir = export_dir / 'train'
     val_dir = export_dir / 'val'
     yaml_file = export_dir / '{}.yaml'.format(export_type)
-    create_directories(train_dir, val_dir)
-    return train_dir, val_dir, yaml_file
+    create_directories(staging_dir, train_dir, val_dir)
+    return staging_dir, train_dir, val_dir, yaml_file
 
 
 def get_export_file_names(image_path):
@@ -176,10 +179,9 @@ def export_image(src_path, dest_path, width, height):
         Height of the exported image.
     """
     logging.info("Exporting image {} to {}.".format(src_path, dest_path))
-    with Image.open(src_path) as source:
-        destination = source.resize((width, height))
-        destination.save(dest_path)
-        destination.close()
+    source_img = cv.imread(src_path)
+    resized_img = cv.resize(source_img, (width, height))
+    cv.imwrite(dest_path, resized_img)
 
 
 def export_collection(annotations, destination_directory, original_size_dict,
@@ -207,8 +209,8 @@ def export_collection(annotations, destination_directory, original_size_dict,
                 export_image(file_name,
                              str(destination_directory / image_name),
                              image_width, image_height)
-                with Image.open(file_name) as img:
-                    original_size_dict[image_name] = img.size
+                img = cv.imread(file_name)
+                original_size_dict[image_name] = img.shape
             except (FileNotFoundError, IsADirectoryError):
                 logging.error("Could not export image {}.".format(file_name))
                 continue
@@ -234,7 +236,7 @@ def main(args):
                                          (args.user, args.password), args.port,
                                          args.top_labels)
     logging.info("Creating export directories for letter annotations.")
-    train_dir, val_dir, yaml_file = create_export_directories(
+    staging_dir, train_dir, val_dir, yaml_file = create_export_directories(
         args.output_dir, export_type='letters')
 
     letter_groups = letters_df.groupby(letters_df.letter)
@@ -254,15 +256,16 @@ def main(args):
                                       test_size=TEST_SIZE,
                                       random_state=RANDOM_SEED)
         logging.info("Exporting training data.")
-        export_collection(train, train_dir, image_size_dict, args.image_size,
+        export_collection(train, staging_dir, image_size_dict, args.image_size,
                           labels_map)
         logging.info("Exporting validation data.")
         export_collection(val, val_dir, image_size_dict, args.image_size,
                           labels_map)
     labels = sorted(labels_map, key=labels_map.get)
+    blur_out_negative_samples(staging_dir, train_dir)
     logging.info(
         "Saving letters dataset description file to {}.".format(yaml_file))
-    save_dataset_description(str(train_dir), str(val_dir), labels,
+    save_dataset_description(str(staging_dir), str(val_dir), labels,
                              str(yaml_file))
 
 
