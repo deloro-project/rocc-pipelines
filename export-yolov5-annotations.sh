@@ -2,7 +2,7 @@ DB_SERVER=$1
 DB_NAME=$2
 USER=$3
 PASSWORD=$4
-IMG_SIZE=${5:-2048}
+IMG_SIZE=${5:-1280}
 TOP_LABELS=${6:-1}
 
 rm -rf yolo-export

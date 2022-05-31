@@ -281,7 +281,7 @@ def parse_arguments():
         help="The size of the exported images. Default is [1024, 768].",
         type=int,
         nargs=2,
-        default=[1024, 786])
+        default=[1280, 1280])
     parser.add_argument(
         '--log-level',
         help="The level of details to print when running.",
