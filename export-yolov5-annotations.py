@@ -2,7 +2,8 @@
 """Exports letter and line annotations into Yolo v5 format."""
 import argparse
 import logging
-from utils.exportutils import load_annotations, create_directories, export_yolov5_annotation
+from utils.exportutils import load_annotations, create_directories
+from utils.exportutils import export_image, export_yolov5_annotation
 from io import StringIO
 from pathlib import Path
 from sklearn.model_selection import train_test_split
@@ -159,27 +160,6 @@ def get_export_file_names(image_path):
     labels_name = '{parent}-{image}.txt'.format(parent=path.parts[-2],
                                                 image=path.stem)
     return image_name, labels_name
-
-
-def export_image(src_path, dest_path, width, height):
-    """Export and resize the image.
-
-    Parameters
-    ----------
-    src_path: str, required
-        The source path of the image.
-    dest_path: str, required
-        The destination path of the image.
-    width: int, required
-        Width of the exported image.
-    height: int, required
-        Height of the exported image.
-    """
-    logging.info("Exporting image {} to {}.".format(src_path, dest_path))
-    with Image.open(src_path) as source:
-        destination = source.resize((width, height))
-        destination.save(dest_path)
-        destination.close()
 
 
 def export_collection(annotations, destination_directory, original_size_dict,

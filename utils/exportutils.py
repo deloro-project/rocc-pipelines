@@ -3,6 +3,7 @@
 import logging
 from sqlalchemy import create_engine
 import pandas as pd
+from PIL import Image
 
 
 def load_annotations(server, database, user, password, port=5432):
@@ -165,3 +166,24 @@ def export_yolov5_annotation(label_index, left_up_horiz, left_up_vert,
                                                  w=w,
                                                  h=h))
         f.write("\n")
+
+
+def export_image(src_path, dest_path, width, height):
+    """Export and resize the image.
+
+    Parameters
+    ----------
+    src_path: str, required
+        The source path of the image.
+    dest_path: str, required
+        The destination path of the image.
+    width: int, required
+        Width of the exported image.
+    height: int, required
+        Height of the exported image.
+    """
+    logging.info("Exporting image {} to {}.".format(src_path, dest_path))
+    with Image.open(src_path) as source:
+        destination = source.resize((width, height))
+        destination.save(dest_path)
+        destination.close()
