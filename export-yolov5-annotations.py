@@ -9,6 +9,7 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 from PIL import Image
 
+DEBUG_MODE = False
 RANDOM_SEED = 2022
 TEST_SIZE = 0.2
 
@@ -74,6 +75,12 @@ def load_letter_annotations(db_server,
         'page_file_name', 'letter', 'left_up_horiz', 'left_up_vert',
         'right_down_horiz', 'right_down_vert'
     ]]
+
+    if DEBUG_MODE:
+        logging.info(
+            "Running in debug mode; database results are truncated to 100 rows."
+        )
+        letters_df = letters_df.head(100)
 
     if top_labels:
         return filter_letter_annotations(letters_df, top_labels)
@@ -331,6 +338,10 @@ def parse_arguments():
         help="The level of details to print when running.",
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         default='INFO')
+    parser.add_argument(
+        '--debug',
+        help="Enable debug mode to load less data from database.",
+        action='store_true')
     return parser.parse_args()
 
 
@@ -338,5 +349,6 @@ if __name__ == '__main__':
     args = parse_arguments()
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                         level=getattr(logging, args.log_level))
+    DEBUG_MODE = args.debug
     main(args)
     logging.info("That's all folks!")
