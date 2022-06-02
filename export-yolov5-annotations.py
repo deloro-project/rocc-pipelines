@@ -4,7 +4,7 @@ import argparse
 import logging
 from utils.exportutils import load_annotations, create_directories
 from utils.exportutils import export_image, export_yolov5_annotation
-from io import StringIO
+from utils.exportutils import save_dataset_description
 from pathlib import Path
 from sklearn.model_selection import train_test_split
 from PIL import Image
@@ -79,45 +79,6 @@ def load_letter_annotations(db_server,
         return filter_letter_annotations(letters_df, top_labels)
 
     return letters_df
-
-
-def save_dataset_description(train, val, labels, yaml_file):
-    """Save dataset description to YAML file.
-
-    Parameters
-    ----------
-    train: str, required
-        The path to the training directory.
-    val: str, required
-        The path to the validation directory.
-    labels: list of str, required
-        The list of class labels.
-    yaml_file: str, required
-        The path of the output YAML file.
-    """
-    # Hack: PyYaml does not quote the label names; as such
-    # we have to print the labels and pass the resulting string
-    with StringIO() as output:
-        print(labels, file=output)
-        names = output.getvalue()
-
-    yaml_content = """# Data directories
-train: {train}
-val: {val}
-
-# Number of classes
-nc: {nc}
-
-# Label names
-names: {names}
-"""
-
-    with open(yaml_file, 'w') as f:
-        f.write(
-            yaml_content.format(train=train,
-                                val=val,
-                                nc=len(labels),
-                                names=names))
 
 
 def create_export_directories(output_directory, export_type):
