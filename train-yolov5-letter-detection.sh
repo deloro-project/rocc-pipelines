@@ -20,7 +20,8 @@ unzip yolov5-annotations.zip -d .
 # Rename yolo-export to deloro
 mv yolo-export deloro
 
-# Fix paths in YAML file
+# Fix paths in YAML files
+sed -i 's/yolo-export\//data\/deloro\//g' deloro/letters/letters.yaml
 sed -i 's/yolo-export\//data\/deloro\//g' deloro/characters/characters.yaml
 
 # Activate virtual environment
