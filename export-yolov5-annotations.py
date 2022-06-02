@@ -120,15 +120,15 @@ names: {names}
                                 names=names))
 
 
-def create_export_directories(output_directory, export_type='letters'):
+def create_export_directories(output_directory, export_type):
     """Create directory structure for export.
 
     Parameters
     ----------
     output_directory: str, required
         The root directory where export data will reside.
-    export_type: str, optional
-        The type of export; can be either 'letters' or 'lines'.
+    export_type: str, required
+        The type of export; can be either 'letters', 'characters', or 'lines'.
         Default is 'letters'.
 
     Returns
@@ -137,7 +137,6 @@ def create_export_directories(output_directory, export_type='letters'):
         The directories for training data, validation data,
         and path of the dataset description file respectively.
     """
-    export_type = 'lines' if export_type.lower() == 'lines' else 'letters'
     export_dir = Path(args.output_dir) / export_type
     train_dir = export_dir / 'train'
     val_dir = export_dir / 'val'
