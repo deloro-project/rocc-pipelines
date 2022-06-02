@@ -230,6 +230,27 @@ The contents of the output directory are as follows:
 - a statistics file named `size-stats.csv` which contains the size of the vocabulary for each period; to change this name provide a value for `--size-stats-file` parameter.
 - a file named `lexicon-per-periods.csv` which contains the terms that appear in more than one period and the periods they appear in; to change this name provide a value for `terms-per-periods-file` parameter.
 
+### Export Yolo v5 annotations ###
+
+- **Script name**: [export-yolov5-annotations.sh](./export-yolov5-annotations.sh)
+- **Description**: Exports annotations in Yolo v5 format for the following tasks: (i) character detection, and (ii) character recognition
+
+#### Usage ####
+
+To run the script issue the following command:
+```sh
+./export-yolov5-annotations.sh <db-server> <db-name> <db-user> <db-password> <image-size> <top-labels>
+```
+where:
+- `<db-server>` is the address of the database server containing annotations,
+- `<db-name>` is the name of the database,
+- `<db-user>` is the username used for connecting to the database,
+- `<db-password>` is the password for connecting to the database,
+- `<image-size>` is the size in pixels of the exported images, and
+- `<top-labels>` is the ratio of labels to export ordered by number of annotated instances descending.
+
+The script above will create an archive file named `/var/export/yolov5-annotations.zip` which will be used for [training detection of letters](#train-yolo-v5-detection-of-letters).
+
 ### Train Yolo v5 detection of letters ###
 
 - **Script name**: [train-yolov5-letter-detection.sh](./train-yolov5-letter-detection.sh)

@@ -3,6 +3,8 @@
 import logging
 from sqlalchemy import create_engine
 import pandas as pd
+from PIL import Image
+from io import StringIO
 
 
 def load_annotations(server, database, user, password, port=5432):
@@ -165,3 +167,63 @@ def export_yolov5_annotation(label_index, left_up_horiz, left_up_vert,
                                                  w=w,
                                                  h=h))
         f.write("\n")
+
+
+def export_image(src_path, dest_path, width, height):
+    """Export and resize the image.
+
+    Parameters
+    ----------
+    src_path: str, required
+        The source path of the image.
+    dest_path: str, required
+        The destination path of the image.
+    width: int, required
+        Width of the exported image.
+    height: int, required
+        Height of the exported image.
+    """
+    logging.info("Exporting image {} to {}.".format(src_path, dest_path))
+    with Image.open(src_path) as source:
+        destination = source.resize((width, height))
+        destination.save(dest_path)
+        destination.close()
+
+
+def save_dataset_description(train, val, labels, yaml_file):
+    """Save dataset description to YAML file.
+
+    Parameters
+    ----------
+    train: str, required
+        The path to the training directory.
+    val: str, required
+        The path to the validation directory.
+    labels: list of str, required
+        The list of class labels.
+    yaml_file: str, required
+        The path of the output YAML file.
+    """
+    # Hack: PyYaml does not quote the label names; as such
+    # we have to print the labels and pass the resulting string
+    with StringIO() as output:
+        print(labels, file=output)
+        names = output.getvalue()
+
+    yaml_content = """# Data directories
+train: {train}
+val: {val}
+
+# Number of classes
+nc: {nc}
+
+# Label names
+names: {names}
+"""
+
+    with open(yaml_file, 'w') as f:
+        f.write(
+            yaml_content.format(train=train,
+                                val=val,
+                                nc=len(labels),
+                                names=names))

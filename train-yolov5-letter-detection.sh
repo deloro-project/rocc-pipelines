@@ -20,15 +20,16 @@ unzip yolov5-annotations.zip -d .
 # Rename yolo-export to deloro
 mv yolo-export deloro
 
-# Fix paths in YAML file
+# Fix paths in YAML files
 sed -i 's/yolo-export\//data\/deloro\//g' deloro/letters/letters.yaml
+sed -i 's/yolo-export\//data\/deloro\//g' deloro/characters/characters.yaml
 
 # Activate virtual environment
 cd $YOLO_DIR
 source .venv/bin/activate
 
 # Start training
-python train.py --img $IMG_SIZE --batch-size -1 --epochs $EPOCHS --data data/deloro/letters/letters.yaml --device cpu --weights $MODEL
+python train.py --img $IMG_SIZE --batch-size -1 --epochs $EPOCHS --data data/deloro/characters/characters.yaml --device cpu --weights $MODEL
 
 # Deactivate virtual environment
 deactivate
