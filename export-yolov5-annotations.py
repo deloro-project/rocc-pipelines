@@ -62,6 +62,11 @@ def load_letter_annotations(db_server,
     top_labels: float between 0 and 1, optional
         The top percent of labels to return when ordered descendingly by number of samples.
         Default is None; when 0 or None returns all labels.
+
+    Returns
+    -------
+    letters_df: pandas.DataFrame
+        The dataframe containing letter annotations.
     """
     user, password = credentials
     letters_df, _ = load_annotations(db_server, db_name, user, password, port)
