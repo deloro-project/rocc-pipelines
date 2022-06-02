@@ -206,20 +206,35 @@ def export_collection(annotations, destination_directory, original_size_dict,
                                  str(destination_directory / labels_name))
 
 
-def main(args):
-    """Export annotations in Yolo v5 format.
+def export_letter_annotations(db_server, db_name, user, password, port,
+                              top_labels, image_size, output_dir):
+    """Export letter annotations.
 
     Parameters
     ----------
-    args: argparse.Namespace, required
-        The arguments of the script.
+    db_server: str, required
+        The database server.
+    db_name: str, required
+        The database name.
+    user: str, required
+        The database user.
+    password: str, required
+        The database password.
+    port: int, required
+        The port for database server.
+    top_labels: float between 0 and 1, optional
+        The top percent of labels to return when ordered descendingly by number of samples.
+    image_size: int, required
+        The size of the exported image in pixels.
+    output_dir: str, required
+        The root directory of the export.
     """
-    letters_df = load_letter_annotations(args.db_server, args.db_name,
-                                         (args.user, args.password), args.port,
-                                         args.top_labels)
+    logging.info("Exporting letters in Yolo v5 format.")
+    letters_df = load_letter_annotations(db_server, db_name, (user, password),
+                                         port, top_labels)
     logging.info("Creating export directories for letter annotations.")
     train_dir, val_dir, yaml_file = create_export_directories(
-        args.output_dir, export_type='letters')
+        output_dir, export_type='letters')
 
     letter_groups = letters_df.groupby(letters_df.letter)
     image_size_dict = {}
@@ -238,16 +253,80 @@ def main(args):
                                       test_size=TEST_SIZE,
                                       random_state=RANDOM_SEED)
         logging.info("Exporting training data.")
-        export_collection(train, train_dir, image_size_dict, args.image_size,
+        export_collection(train, train_dir, image_size_dict, image_size,
                           labels_map)
         logging.info("Exporting validation data.")
-        export_collection(val, val_dir, image_size_dict, args.image_size,
+        export_collection(val, val_dir, image_size_dict, image_size,
                           labels_map)
     labels = sorted(labels_map, key=labels_map.get)
     logging.info(
         "Saving letters dataset description file to {}.".format(yaml_file))
     save_dataset_description(str(train_dir), str(val_dir), labels,
                              str(yaml_file))
+    logging.info("Finished exporting letters in Yolo v5 format.")
+
+
+def export_char_annotations(db_server, db_name, user, password, port,
+                            image_size, output_dir):
+    """Export letter annotations under a single label.
+
+    Parameters
+    ----------
+    db_server: str, required
+        The database server.
+    db_name: str, required
+        The database name.
+    user: str, required
+        The database user.
+    password: str, required
+        The database password.
+    port: int, required
+        The port for database server.
+    image_size: int, required
+        The size of the exported image in pixels.
+    output_dir: str, required
+        The root directory of the export.
+    """
+    logging.info("Exporting characters in Yolo v5 format.")
+    letters_df = load_letter_annotations(db_server,
+                                         db_name, (user, password),
+                                         port,
+                                         top_labels=None)
+    letters_df.letter = 'char'
+    logging.info("Creating export directories for letter annotations.")
+    train_dir, val_dir, yaml_file = create_export_directories(
+        output_dir, export_type='characters')
+    image_size_dict, labels_map = {}, {}
+    train, val = train_test_split(letters_df.to_numpy(),
+                                  test_size=TEST_SIZE,
+                                  random_state=RANDOM_SEED)
+    logging.info("Exporting training data.")
+    export_collection(train, train_dir, image_size_dict, image_size,
+                      labels_map)
+    logging.info("Exporting validation data.")
+    export_collection(val, val_dir, image_size_dict, image_size, labels_map)
+    labels = sorted(labels_map, key=labels_map.get)
+    logging.info(
+        "Saving characters dataset description file to {}.".format(yaml_file))
+    save_dataset_description(str(train_dir), str(val_dir), labels,
+                             str(yaml_file))
+    logging.info("Finished exporting characters in Yolo v5 format.")
+
+
+def main(args):
+    """Export annotations in Yolo v5 format.
+
+    Parameters
+    ----------
+    args: argparse.Namespace, required
+        The arguments of the script.
+    """
+    export_letter_annotations(args.db_server, args.db_name, args.user,
+                              args.password, args.port, args.top_labels,
+                              args.image_size, args.output_dir)
+    export_char_annotations(args.db_server, args.db_name, args.user,
+                            args.password, args.port, args.image_size,
+                            args.output_dir)
 
 
 def parse_arguments():
