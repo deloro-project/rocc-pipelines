@@ -179,7 +179,7 @@ def export_collection(annotations, destination_directory, original_size_dict,
 
 
 def export_letter_annotations(db_server, db_name, user, password, port,
-                              top_labels, image_size, output_dir):
+                              top_labels, image_size, binary_read, output_dir):
     """Export letter annotations.
 
     Parameters
@@ -198,6 +198,8 @@ def export_letter_annotations(db_server, db_name, user, password, port,
         The top percent of labels to return when ordered descendingly by number of samples.
     image_size: int, required
         The size of the exported image in pixels.
+    binary_read: bool, required
+        Specifies whether to read images in black and white or not.
     output_dir: str, required
         The root directory of the export.
     """
@@ -226,10 +228,10 @@ def export_letter_annotations(db_server, db_name, user, password, port,
                                       random_state=RANDOM_SEED)
         logging.info("Exporting training data.")
         export_collection(train, staging_dir, image_size_dict, args.image_size,
-                          labels_map, args.binary_read)
+                          labels_map, binary_read)
         logging.info("Exporting validation data.")
         export_collection(val, val_dir, image_size_dict, args.image_size,
-                          labels_map, args.binary_read)
+                          labels_map, binary_read)
     labels = sorted(labels_map, key=labels_map.get)
     logging.info("Blurring unmarked letters from all images.")
     blur_out_negative_samples(staging_dir, train_dir)
@@ -243,7 +245,7 @@ def export_letter_annotations(db_server, db_name, user, password, port,
 
 
 def export_char_annotations(db_server, db_name, user, password, port,
-                            image_size, output_dir):
+                            image_size, binary_read, output_dir):
     """Export letter annotations under a single label.
 
     Parameters
@@ -260,6 +262,8 @@ def export_char_annotations(db_server, db_name, user, password, port,
         The port for database server.
     image_size: int, required
         The size of the exported image in pixels.
+    binary_read: bool, required
+        Specifies whether to read images in black and white or not.
     output_dir: str, required
         The root directory of the export.
     """
@@ -279,14 +283,15 @@ def export_char_annotations(db_server, db_name, user, password, port,
 
     logging.info("Exporting training data.")
     export_collection(train, staging_dir, image_size_dict, image_size,
-                      labels_map)
+                      labels_map, binary_read)
     logging.info("Blurring unmarked letters from all images.")
     blur_out_negative_samples(staging_dir, train_dir)
     if not DEBUG_MODE:
         shutil.rmtree(staging_dir)
 
     logging.info("Exporting validation data.")
-    export_collection(val, val_dir, image_size_dict, image_size, labels_map)
+    export_collection(val, val_dir, image_size_dict, image_size, labels_map,
+                      binary_read)
     labels = sorted(labels_map, key=labels_map.get)
 
     logging.info(
@@ -306,10 +311,11 @@ def main(args):
     """
     export_letter_annotations(args.db_server, args.db_name, args.user,
                               args.password, args.port, args.top_labels,
-                              args.image_size, args.output_dir)
+                              args.image_size, args.binary_read,
+                              args.output_dir)
     export_char_annotations(args.db_server, args.db_name, args.user,
                             args.password, args.port, args.image_size,
-                            args.output_dir)
+                            args.binary_read, args.output_dir)
 
 
 def parse_arguments():
