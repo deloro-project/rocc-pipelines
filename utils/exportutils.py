@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 """Utility functions for annotations export."""
 import logging
-import shutil
 
 import numpy as np
 from sqlalchemy import create_engine
 import pandas as pd
 import cv2 as cv
+from PIL import Image
+from io import StringIO
+from pathlib import Path
+from utils.yolov5utils import iterate_labels, translate_coordinates, iterate_yolo_directory
 
 
 def load_annotations(server, database, user, password, port=5432):
@@ -171,33 +174,32 @@ def export_yolov5_annotation(label_index, left_up_horiz, left_up_vert,
         f.write("\n")
 
 
-def get_scaled_box_coords(center, box_size, img_size):
-    """
-    Scale coordinates from the YOLOv5 formate to the box like format
-
-    Returns
-    ----------
-    top left and bottom down coords of the box
-    """
-    x_center, y_center = center
-    height, width = box_size
-    img_height, img_width = img_size
-    x_center, y_center, width, height = float(x_center) * img_width, float(y_center) * img_height, float(
-        width) * img_width, float(height) * img_height
-    x1, x2 = x_center - (width // 2), x_center + (width // 2)
-    y1, y2 = y_center - (height // 2), y_center + (height // 2)
-    return int(x1), int(x2), int(y1), int(y2)
-
-
 def create_mask(top_left_corner, bottom_right_corner, img_size, padding=20):
-    """
+    """Create a mask that will cover the text on the image.
+
     This method will create a mask which will be an image with a black background and white coloring for the zone witch
     should contain the text. We take the coords of the text zone, add some padding to make sure its mostly covered and
     make it white.
+
+    Parameters
+    ----------
+    top_left_corner: tuple of (int, int), required
+        The coordinates of the top-left corner of the mask.
+    bottom_right_corner: tuple of (int, int), required
+        The coordinates of the bottom-right corner of the mask.
+    img_size: tuple of (int, int), required
+        The size of the image in (width, height) format.
+    padding: int, optional
+        The padding applied to masked area. Default is 20.
+
+    Returns
+    -------
+    mask: image
+        The mask image.
     """
     x1, y1 = top_left_corner
     x2, y2 = bottom_right_corner
-    img_height, img_width = img_size
+    img_width, img_height = img_size
     mask = np.empty([img_height, img_width])
     mask.fill(0)
     mask[y1 - padding:y2 + padding, x1 - padding:x2 + padding] = 255
@@ -206,12 +208,16 @@ def create_mask(top_left_corner, bottom_right_corner, img_size, padding=20):
 
 
 def eliminate_all_letters_from_image(img, mask, radius=10):
-    """
+    """Eliminate all letters from image by applying the provided mask.
+
     Parameters
     ----------
-    img: unaltered image
-    mask: mask that specifies the zone which will be eliminated
-    radius
+    img: image, required
+        The unaltered image to which to apply the mask.
+    mask: image, required
+        Mask that specifies the zone which will be eliminated.
+    radius: int, optional
+        Radius of a circular neighborhood of each point inpainted that is considered by the CV2 algorithm.
 
     Returns
     -------
@@ -221,15 +227,19 @@ def eliminate_all_letters_from_image(img, mask, radius=10):
 
 
 def put_letters_back(img, letters):
-    """
+    """Draw annotated letters over the masked image.
+
     Parameters
     ----------
-    img: image that has all letters removed
-    letters: original boxes that need to be placed back on their initial coordinates
+    img: image, required
+        Image that has all letters removed.
+    letters: iterable of boxes of annotated letters and their coordinates
+        Original boxes that need to be placed back on their initial coordinates.
 
     Returns
     -------
-    restored image
+    painted: image
+        The image where annotated letters have been restored to their position.
     """
     for letter_img, top_left, bottom_right in letters:
         x1, y1 = top_left
@@ -238,29 +248,154 @@ def put_letters_back(img, letters):
     return img
 
 
-def blur_out_negative_samples(staging_dir, train_dir):
-    """
+def get_cv2_image_size(image):
+    """Get image size in (width, height) format from cv2 image.
+
     Parameters
     ----------
-    staging_dir: directory containing original, resized images
-    train_dir: directory where we copy the images after being cleaned of negative samples
+    image: cv2 Image, required
+        The image from which to extract size.
+
+    Returns
+    -------
+    (width, height): tuple of (int, int)
+        The size of the image in (width, height) format.
     """
-    for file in staging_dir.iterdir():
+    height, width, _ = image.shape
+    return (width, height)
+
+
+def get_mask_coordinates(annotations, image_size):
+    """Determine the coordinates of the mask from the coordinates of the annotations and image size.
+
+    Parameters
+    ----------
+    annotations: iterable of tuples of shape (image, top_left, bottom_right), required
+        The collection of annotations where te second and third elements of the tuple are box coordinates.
+    image_size: tuple of (int, int), required
+        The size of the image in (width, height) format.
+
+    Returns
+    -------
+    min_top_left, max_bottom_right: tuple of (point, point)
+        The minimum point on the top left, and the maximum point on the bottom right from annotations.
+    """
+    width, height = image_size
+    min_x1, min_y1, max_x2, max_y2 = width, height, 0, 0
+    for _, top_left, bottom_right in annotations:
+        x1, y1 = top_left
+        x2, y2 = bottom_right
+        min_x1, min_y1 = min(min_x1, x1), min(min_y1, y1)
+        max_x2, max_y2 = max(max_x2, x2), max(max_y2, y2)
+    return (min_x1, min_y1), (max_x2, max_y2)
+
+
+def get_path_for_move(file_name, target_dir):
+    """Get the path as if file was moved into target directory.
+
+    Parameters
+    ----------
+    file_name: str, required
+        The file to be moved.
+    target_dir: pathlib.Path
+        The directory where the file is to be moved.
+
+    Returns
+    -------
+    target_file: pathlib.Path
+        New path representing the file being moved to target directory.
+    """
+    file_path = Path(file_name)
+    return target_dir / file_path.name
+
+
+def blur_out_negative_samples(staging_dir, train_dir):
+    """Apply a blur mask on the unannotated letters in the images.
+
+    Parameters
+    ----------
+    staging_dir: pathlib.Path, required
+        Directory containing original, resized images.
+    train_dir: pathlib.Path, required
+        Directory where we copy the images after being cleaned of negative samples
+    """
+    for img_file, labels_file in iterate_yolo_directory(staging_dir):
+        logging.info("Blurring out negative samples from {}.".format(img_file))
         letters = []
-        if "png" in file.name:
-            img_file = f"{str(staging_dir)}/{file.name}"
-            labels_file = f"{str(staging_dir)}/{file.name[:-4]}.txt"
-            img = cv.imread(img_file)
-            original_height, original_width, _ = img.shape
-            min_x1, min_y1, max_x2, max_y2 = img.shape[1], img.shape[0], 0, 0
-            annotations = open(labels_file, "r").readlines()
-            for annot in annotations:
-                label, x_center, y_center, width, height = annot.split()
-                x1, x2, y1, y2 = get_scaled_box_coords((x_center, y_center), (height, width), img.shape[:2])
-                min_x1, min_y1, max_x2, max_y2 = min(min_x1, x1), min(min_y1, y1), max(max_x2, x2), max(max_y2, y2)
-                letters.append((img[y1:y2, x1:x2].copy(), (x1, y1), (x2, y2)))
-            mask = create_mask((min_x1, min_y1), (max_x2, max_y2), img.shape[:2])
-            img = eliminate_all_letters_from_image(img, mask)
-            img = put_letters_back(img, letters)
-            cv.imwrite(f"{str(train_dir)}/{file.name}", img)
-            shutil.copy(labels_file, f"{str(train_dir)}/{file.name[:-4]}.txt")
+        img = cv.imread(img_file)
+        img_size = get_cv2_image_size(img)
+        for _, x, y, width, height in iterate_labels(labels_file):
+            center, box_size = (x, y), (width, height)
+            (x1, y1), (x2,
+                       y2), _ = translate_coordinates(center, box_size,
+                                                      img_size)
+            letters.append((img[y1:y2, x1:x2].copy(), (x1, y1), (x2, y2)))
+        min_top_left, max_bottom_right = get_mask_coordinates(
+            letters, img_size)
+        mask = create_mask(min_top_left, max_bottom_right, img_size)
+        img = eliminate_all_letters_from_image(img, mask)
+        img = put_letters_back(img, letters)
+        train_image_path = get_path_for_move(img_file, train_dir)
+        cv.imwrite(str(train_image_path), img)
+        labels = Path(labels_file)
+        labels = labels.rename(get_path_for_move(labels_file, train_dir))
+
+
+def export_image(src_path, dest_path, width, height):
+    """Export and resize the image.
+
+    Parameters
+    ----------
+    src_path: str, required
+        The source path of the image.
+    dest_path: str, required
+        The destination path of the image.
+    width: int, required
+        Width of the exported image.
+    height: int, required
+        Height of the exported image.
+    """
+    logging.info("Exporting image {} to {}.".format(src_path, dest_path))
+    with Image.open(src_path) as source:
+        destination = source.resize((width, height))
+        destination.save(dest_path)
+        destination.close()
+
+
+def save_dataset_description(train, val, labels, yaml_file):
+    """Save dataset description to YAML file.
+
+    Parameters
+    ----------
+    train: str, required
+        The path to the training directory.
+    val: str, required
+        The path to the validation directory.
+    labels: list of str, required
+        The list of class labels.
+    yaml_file: str, required
+        The path of the output YAML file.
+    """
+    # Hack: PyYaml does not quote the label names; as such
+    # we have to print the labels and pass the resulting string
+    with StringIO() as output:
+        print(labels, file=output)
+        names = output.getvalue()
+
+    yaml_content = """# Data directories
+train: {train}
+val: {val}
+
+# Number of classes
+nc: {nc}
+
+# Label names
+names: {names}
+"""
+
+    with open(yaml_file, 'w') as f:
+        f.write(
+            yaml_content.format(train=train,
+                                val=val,
+                                nc=len(labels),
+                                names=names))

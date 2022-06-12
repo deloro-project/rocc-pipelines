@@ -2,15 +2,16 @@
 """Exports letter and line annotations into Yolo v5 format."""
 import argparse
 import logging
+from utils.exportutils import load_annotations, create_directories
+from utils.exportutils import export_image, export_yolov5_annotation
+from utils.exportutils import save_dataset_description, blur_out_negative_samples
 from pathlib import Path
-import io
 import shutil
 
 import cv2 as cv
 from sklearn.model_selection import train_test_split
 
-from utils.exportutils import load_annotations, create_directories, export_yolov5_annotation, blur_out_negative_samples
-
+DEBUG_MODE = False
 RANDOM_SEED = 2022
 TEST_SIZE = 0.2
 
@@ -64,6 +65,11 @@ def load_letter_annotations(db_server,
     top_labels: float between 0 and 1, optional
         The top percent of labels to return when ordered descendingly by number of samples.
         Default is None; when 0 or None returns all labels.
+
+    Returns
+    -------
+    letters_df: pandas.DataFrame
+        The dataframe containing letter annotations.
     """
     user, password = credentials
     letters_df, _ = load_annotations(db_server, db_name, user, password, port)
@@ -72,60 +78,27 @@ def load_letter_annotations(db_server,
         'right_down_horiz', 'right_down_vert'
     ]]
 
+    if DEBUG_MODE:
+        logging.info(
+            "Running in debug mode; database results are truncated to 100 rows."
+        )
+        letters_df = letters_df.head(100)
+
     if top_labels:
         return filter_letter_annotations(letters_df, top_labels)
 
     return letters_df
 
 
-def save_dataset_description(train, val, labels, yaml_file):
-    """Save dataset description to YAML file.
-
-    Parameters
-    ----------
-    train: str, required
-        The path to the training directory.
-    val: str, required
-        The path to the validation directory.
-    labels: list of str, required
-        The list of class labels.
-    yaml_file: str, required
-        The path of the output YAML file.
-    """
-    # Hack: PyYaml does not quote the label names; as such
-    # we have to print the labels and pass the resulting string
-    with io.StringIO() as output:
-        print(labels, file=output)
-        names = output.getvalue()
-
-    yaml_content = """# Data directories
-train: {train}
-val: {val}
-
-# Number of classes
-nc: {nc}
-
-# Label names
-names: {names}
-"""
-
-    with io.open(yaml_file, 'w', encoding="utf8") as f:
-        f.write(
-            yaml_content.format(train=train,
-                                val=val,
-                                nc=len(labels),
-                                names=names))
-
-
-def create_export_directories(output_directory, export_type='letters'):
+def create_export_directories(output_directory, export_type):
     """Create directory structure for export.
 
     Parameters
     ----------
     output_directory: str, required
         The root directory where export data will reside.
-    export_type: str, optional
-        The type of export; can be either 'letters' or 'lines'.
+    export_type: str, required
+        The type of export; can be either 'letters', 'characters', or 'lines'.
         Default is 'letters'.
 
     Returns
@@ -134,7 +107,6 @@ def create_export_directories(output_directory, export_type='letters'):
         The directories for training data, validation data,
         and path of the dataset description file respectively.
     """
-    export_type = 'lines' if export_type.lower() == 'lines' else 'letters'
     export_dir = Path(args.output_dir) / export_type
     staging_dir = export_dir / 'staging_dir'
     train_dir = export_dir / 'train'
@@ -163,26 +135,6 @@ def get_export_file_names(image_path):
     labels_name = '{parent}-{image}.txt'.format(parent=path.parts[-2],
                                                 image=path.stem)
     return image_name, labels_name
-
-
-def export_image(src_path, dest_path, width, height):
-    """Export and resize the image.
-
-    Parameters
-    ----------
-    src_path: str, required
-        The source path of the image.
-    dest_path: str, required
-        The destination path of the image.
-    width: int, required
-        Width of the exported image.
-    height: int, required
-        Height of the exported image.
-    """
-    logging.info("Exporting image {} to {}.".format(src_path, dest_path))
-    source_img = cv.imread(src_path)
-    resized_img = cv.resize(source_img, (width, height))
-    cv.imwrite(dest_path, resized_img)
 
 
 def export_collection(annotations, destination_directory, original_size_dict,
@@ -225,20 +177,35 @@ def export_collection(annotations, destination_directory, original_size_dict,
                                  str(destination_directory / labels_name))
 
 
-def main(args):
-    """Export annotations in Yolo v5 format.
+def export_letter_annotations(db_server, db_name, user, password, port,
+                              top_labels, image_size, output_dir):
+    """Export letter annotations.
 
     Parameters
     ----------
-    args: argparse.Namespace, required
-        The arguments of the script.
+    db_server: str, required
+        The database server.
+    db_name: str, required
+        The database name.
+    user: str, required
+        The database user.
+    password: str, required
+        The database password.
+    port: int, required
+        The port for database server.
+    top_labels: float between 0 and 1, optional
+        The top percent of labels to return when ordered descendingly by number of samples.
+    image_size: int, required
+        The size of the exported image in pixels.
+    output_dir: str, required
+        The root directory of the export.
     """
-    letters_df = load_letter_annotations(args.db_server, args.db_name,
-                                         (args.user, args.password), args.port,
-                                         args.top_labels)
+    logging.info("Exporting letters in Yolo v5 format.")
+    letters_df = load_letter_annotations(db_server, db_name, (user, password),
+                                         port, top_labels)
     logging.info("Creating export directories for letter annotations.")
     staging_dir, train_dir, val_dir, yaml_file = create_export_directories(
-        args.output_dir, export_type='letters')
+        output_dir, export_type='letters')
 
     letter_groups = letters_df.groupby(letters_df.letter)
     image_size_dict = {}
@@ -257,19 +224,91 @@ def main(args):
                                       test_size=TEST_SIZE,
                                       random_state=RANDOM_SEED)
         logging.info("Exporting training data.")
-        export_collection(train, staging_dir, image_size_dict, args.image_size,
+        export_collection(train, train_dir, image_size_dict, image_size,
                           labels_map)
         logging.info("Exporting validation data.")
-        export_collection(val, val_dir, image_size_dict, args.image_size,
+        export_collection(val, val_dir, image_size_dict, image_size,
                           labels_map)
     labels = sorted(labels_map, key=labels_map.get)
     logging.info("Blurring unmarked letters from all images.")
     blur_out_negative_samples(staging_dir, train_dir)
-    shutil.rmtree(staging_dir)
+    if not DEBUG_MODE:
+        shutil.rmtree(staging_dir)
     logging.info(
         "Saving letters dataset description file to {}.".format(yaml_file))
     save_dataset_description(str(staging_dir), str(val_dir), labels,
                              str(yaml_file))
+    logging.info("Finished exporting letters in Yolo v5 format.")
+
+
+def export_char_annotations(db_server, db_name, user, password, port,
+                            image_size, output_dir):
+    """Export letter annotations under a single label.
+
+    Parameters
+    ----------
+    db_server: str, required
+        The database server.
+    db_name: str, required
+        The database name.
+    user: str, required
+        The database user.
+    password: str, required
+        The database password.
+    port: int, required
+        The port for database server.
+    image_size: int, required
+        The size of the exported image in pixels.
+    output_dir: str, required
+        The root directory of the export.
+    """
+    logging.info("Exporting characters in Yolo v5 format.")
+    letters_df = load_letter_annotations(db_server,
+                                         db_name, (user, password),
+                                         port,
+                                         top_labels=None)
+    letters_df.letter = 'char'
+    logging.info("Creating export directories for letter annotations.")
+    staging_dir, train_dir, val_dir, yaml_file = create_export_directories(
+        output_dir, export_type='characters')
+    image_size_dict, labels_map = {}, {}
+    train, val = train_test_split(letters_df.to_numpy(),
+                                  test_size=TEST_SIZE,
+                                  random_state=RANDOM_SEED)
+
+    logging.info("Exporting training data.")
+    export_collection(train, staging_dir, image_size_dict, image_size,
+                      labels_map)
+    logging.info("Blurring unmarked letters from all images.")
+    blur_out_negative_samples(staging_dir, train_dir)
+    if not DEBUG_MODE:
+        shutil.rmtree(staging_dir)
+
+    logging.info("Exporting validation data.")
+    export_collection(val, val_dir, image_size_dict, image_size, labels_map)
+    labels = sorted(labels_map, key=labels_map.get)
+
+    logging.info(
+        "Saving characters dataset description file to {}.".format(yaml_file))
+    save_dataset_description(str(train_dir), str(val_dir), labels,
+                             str(yaml_file))
+    logging.info("Finished exporting characters in Yolo v5 format.")
+
+
+def main(args):
+    """Export annotations in Yolo v5 format.
+
+    Parameters
+    ----------
+    args: argparse.Namespace, required
+        The arguments of the script.
+    """
+    export_letter_annotations(args.db_server, args.db_name, args.user,
+                              args.password, args.port, args.top_labels,
+                              args.image_size, args.output_dir)
+    export_char_annotations(args.db_server, args.db_name, args.user,
+                            args.password, args.port, args.image_size,
+                            args.output_dir)
 
 
 def parse_arguments():
@@ -307,12 +346,16 @@ def parse_arguments():
         help="The size of the exported images. Default is [1024, 768].",
         type=int,
         nargs=2,
-        default=[1024, 786])
+        default=[1280, 1280])
     parser.add_argument(
         '--log-level',
         help="The level of details to print when running.",
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         default='INFO')
+    parser.add_argument(
+        '--debug',
+        help="Enable debug mode to load less data from database.",
+        action='store_true')
     return parser.parse_args()
 
 
@@ -320,5 +363,6 @@ if __name__ == '__main__':
     args = parse_arguments()
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                         level=getattr(logging, args.log_level))
+    DEBUG_MODE = args.debug
     main(args)
     logging.info("That's all folks!")
