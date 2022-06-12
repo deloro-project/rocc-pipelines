@@ -174,7 +174,7 @@ def export_yolov5_annotation(label_index, left_up_horiz, left_up_vert,
         f.write("\n")
 
 
-def create_mask(top_left_corner, bottom_right_corner, img_size, padding=20):
+def create_mask(top_left_corner, bottom_right_corner, img_size):
     """Create a mask that will cover the text on the image.
 
     This method will create a mask which will be an image with a black background and white coloring for the zone witch
@@ -189,8 +189,6 @@ def create_mask(top_left_corner, bottom_right_corner, img_size, padding=20):
         The coordinates of the bottom-right corner of the mask.
     img_size: tuple of (int, int), required
         The size of the image in (width, height) format.
-    padding: int, optional
-        The padding applied to masked area. Default is 20.
 
     Returns
     -------
@@ -202,7 +200,7 @@ def create_mask(top_left_corner, bottom_right_corner, img_size, padding=20):
     img_width, img_height = img_size
     mask = np.empty([img_height, img_width])
     mask.fill(0)
-    mask[y1 - padding:y2 + padding, x1 - padding:x2 + padding] = 255
+    mask[y1:y2, x1:x2] = 255
     cv.imwrite("mask.png", mask)
     return cv.imread("mask.png", cv.IMREAD_GRAYSCALE)
 
@@ -265,13 +263,11 @@ def get_cv2_image_size(image):
     return (width, height)
 
 
-def get_mask_coordinates(annotations, image_size):
+def get_mask_coordinates(image_size):
     """Determine the coordinates of the mask from the coordinates of the annotations and image size.
 
     Parameters
     ----------
-    annotations: iterable of tuples of shape (image, top_left, bottom_right), required
-        The collection of annotations where te second and third elements of the tuple are box coordinates.
     image_size: tuple of (int, int), required
         The size of the image in (width, height) format.
 
@@ -281,13 +277,7 @@ def get_mask_coordinates(annotations, image_size):
         The minimum point on the top left, and the maximum point on the bottom right from annotations.
     """
     width, height = image_size
-    min_x1, min_y1, max_x2, max_y2 = width, height, 0, 0
-    for _, top_left, bottom_right in annotations:
-        x1, y1 = top_left
-        x2, y2 = bottom_right
-        min_x1, min_y1 = min(min_x1, x1), min(min_y1, y1)
-        max_x2, max_y2 = max(max_x2, x2), max(max_y2, y2)
-    return (min_x1, min_y1), (max_x2, max_y2)
+    return (30, 30), (width - 30, height - 30)
 
 
 def get_path_for_move(file_name, target_dir):
@@ -330,8 +320,7 @@ def blur_out_negative_samples(staging_dir, train_dir):
                        y2), _ = translate_coordinates(center, box_size,
                                                       img_size)
             letters.append((img[y1:y2, x1:x2].copy(), (x1, y1), (x2, y2)))
-        min_top_left, max_bottom_right = get_mask_coordinates(
-            letters, img_size)
+        min_top_left, max_bottom_right = get_mask_coordinates(img_size)
         mask = create_mask(min_top_left, max_bottom_right, img_size)
         img = eliminate_all_letters_from_image(img, mask)
         img = put_letters_back(img, letters)
