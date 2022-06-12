@@ -138,7 +138,7 @@ def get_export_file_names(image_path):
 
 
 def export_collection(annotations, destination_directory, original_size_dict,
-                      image_size, labels_map):
+                      image_size, labels_map, binary_read):
     """Export collection of annotations to destination directory.
 
     Parameters
@@ -158,15 +158,16 @@ def export_collection(annotations, destination_directory, original_size_dict,
     for file_name, letter, *coords in annotations:
         image_name, labels_name = get_export_file_names(file_name)
         if image_name not in original_size_dict:
-            try:
-                export_image(file_name,
-                             str(destination_directory / image_name),
-                             image_width, image_height)
+            image_exported = export_image(
+                file_name, str(destination_directory / image_name),
+                image_width, image_height, binary_read)
+            if image_exported:
                 img = cv.imread(file_name)
                 original_size_dict[image_name] = img.shape
-            except (FileNotFoundError, IsADirectoryError):
+            else:
                 logging.error("Could not export image {}.".format(file_name))
                 continue
+
         if letter not in labels_map:
             labels_map[letter] = len(labels_map)
         label_index = labels_map[letter]
@@ -224,11 +225,11 @@ def export_letter_annotations(db_server, db_name, user, password, port,
                                       test_size=TEST_SIZE,
                                       random_state=RANDOM_SEED)
         logging.info("Exporting training data.")
-        export_collection(train, train_dir, image_size_dict, image_size,
-                          labels_map)
+        export_collection(train, staging_dir, image_size_dict, args.image_size,
+                          labels_map, args.binary_read)
         logging.info("Exporting validation data.")
-        export_collection(val, val_dir, image_size_dict, image_size,
-                          labels_map)
+        export_collection(val, val_dir, image_size_dict, args.image_size,
+                          labels_map, args.binary_read)
     labels = sorted(labels_map, key=labels_map.get)
     logging.info("Blurring unmarked letters from all images.")
     blur_out_negative_samples(staging_dir, train_dir)
@@ -346,7 +347,12 @@ def parse_arguments():
         help="The size of the exported images. Default is [1024, 768].",
         type=int,
         nargs=2,
-        default=[1280, 1280])
+        default=[1024, 786])
+
+    parser.add_argument('--binary-read',
+                        help="Sample the images as black and white.",
+                        action='store_true')
+
     parser.add_argument(
         '--log-level',
         help="The level of details to print when running.",

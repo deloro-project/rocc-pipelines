@@ -330,7 +330,7 @@ def blur_out_negative_samples(staging_dir, train_dir):
         labels = labels.rename(get_path_for_move(labels_file, train_dir))
 
 
-def export_image(src_path, dest_path, width, height):
+def export_image(src_path, dest_path, width, height, binary_read):
     """Export and resize the image.
 
     Parameters
@@ -343,12 +343,26 @@ def export_image(src_path, dest_path, width, height):
         Width of the exported image.
     height: int, required
         Height of the exported image.
+
+    Returns
+    -------
+    success: bool
+        True if export succeeded; False otherwise.
     """
     logging.info("Exporting image {} to {}.".format(src_path, dest_path))
-    with Image.open(src_path) as source:
-        destination = source.resize((width, height))
-        destination.save(dest_path)
-        destination.close()
+    if binary_read:
+        source_img = cv.imread(src_path, cv.IMREAD_GRAYSCALE)
+        source_img = cv.adaptiveThreshold(source_img, 255,
+                                          cv.ADAPTIVE_THRESH_MEAN_C,
+                                          cv.THRESH_BINARY, 11, 2)
+    else:
+        source_img = cv.imread(src_path)
+    if source_img is None:
+        return False
+
+    resized_img = cv.resize(source_img, (width, height))
+    cv.imwrite(dest_path, resized_img)
+    return True
 
 
 def save_dataset_description(train, val, labels, yaml_file):
