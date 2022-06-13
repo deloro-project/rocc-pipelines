@@ -7,6 +7,7 @@ import pandas as pd
 import cv2 as cv
 from io import StringIO
 from pathlib import Path
+from joblib import Parallel, delayed
 from tempfile import NamedTemporaryFile
 from utils.yolov5utils import iterate_labels, translate_coordinates, iterate_yolo_directory
 
@@ -300,7 +301,40 @@ def get_path_for_move(file_name, target_dir):
     return target_dir / file_path.name
 
 
-def blur_out_negative_samples(staging_dir, train_dir):
+def apply_mask_and_export(image_file, labels_file, export_dir):
+    """Apply mask to the provided image file and export it with labels file.
+
+    Parameters
+    ----------
+    image_file: str, required
+        The image to blur and export.
+    labels_file: str, required
+        The labels file.
+    export_dir: pathlib.Path, required
+        The path of the export directory.
+    """
+    letters = []
+    img = cv.imread(image_file)
+    img_size = get_cv2_image_size(img)
+    for _, x, y, width, height in iterate_labels(labels_file):
+        center, box_size = (x, y), (width, height)
+        (x1, y1), (x2, y2), _ = translate_coordinates(center, box_size,
+                                                      img_size)
+        letters.append((img[y1:y2, x1:x2].copy(), (x1, y1), (x2, y2)))
+    min_top_left, max_bottom_right = get_mask_coordinates(img_size)
+    mask = create_mask(min_top_left, max_bottom_right, img_size)
+    img = eliminate_all_letters_from_image(img, mask)
+    img = put_letters_back(img, letters)
+    train_image_path = get_path_for_move(image_file, export_dir)
+    cv.imwrite(str(train_image_path), img)
+    labels = Path(labels_file)
+    labels = labels.rename(get_path_for_move(labels_file, export_dir))
+
+
+def blur_out_negative_samples(staging_dir,
+                              train_dir,
+                              num_jobs=-2,
+                              verbosity=11):
     """Apply a blur mask on the unannotated letters in the images.
 
     Parameters
@@ -310,25 +344,9 @@ def blur_out_negative_samples(staging_dir, train_dir):
     train_dir: pathlib.Path, required
         Directory where we copy the images after being cleaned of negative samples
     """
-    for img_file, labels_file in iterate_yolo_directory(staging_dir):
-        logging.info("Blurring out negative samples from {}.".format(img_file))
-        letters = []
-        img = cv.imread(img_file)
-        img_size = get_cv2_image_size(img)
-        for _, x, y, width, height in iterate_labels(labels_file):
-            center, box_size = (x, y), (width, height)
-            (x1, y1), (x2,
-                       y2), _ = translate_coordinates(center, box_size,
-                                                      img_size)
-            letters.append((img[y1:y2, x1:x2].copy(), (x1, y1), (x2, y2)))
-        min_top_left, max_bottom_right = get_mask_coordinates(img_size)
-        mask = create_mask(min_top_left, max_bottom_right, img_size)
-        img = eliminate_all_letters_from_image(img, mask)
-        img = put_letters_back(img, letters)
-        train_image_path = get_path_for_move(img_file, train_dir)
-        cv.imwrite(str(train_image_path), img)
-        labels = Path(labels_file)
-        labels = labels.rename(get_path_for_move(labels_file, train_dir))
+    Parallel(n_jobs=num_jobs, verbose=verbosity)(
+        delayed(apply_mask_and_export)(img_file, labels_file, train_dir)
+        for img_file, labels_file in iterate_yolo_directory(staging_dir))
 
 
 def export_image(src_path, dest_path, width, height, binary_read):
