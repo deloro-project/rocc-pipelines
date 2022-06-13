@@ -20,8 +20,8 @@ def iterate_labels(labels_file):
         for line in f:
             parts = line.split()
             class_id = int(parts[0])
-            rectangle = [float(p) for p in parts[1:]]
-            yield class_id, *rectangle
+            x, y, w, h = [float(p) for p in parts[1:]]
+            yield class_id, x, y, w, h
 
 
 def translate_coordinates(center, box_size, image_size):
