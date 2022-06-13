@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 """Utility functions for annotations export."""
 import logging
-
 import numpy as np
 from sqlalchemy import create_engine
 import pandas as pd
 import cv2 as cv
-from PIL import Image
 from io import StringIO
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from utils.yolov5utils import iterate_labels, translate_coordinates, iterate_yolo_directory
 
 
@@ -201,8 +200,10 @@ def create_mask(top_left_corner, bottom_right_corner, img_size):
     mask = np.empty([img_height, img_width])
     mask.fill(0)
     mask[y1:y2, x1:x2] = 255
-    cv.imwrite("mask.png", mask)
-    return cv.imread("mask.png", cv.IMREAD_GRAYSCALE)
+    with NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+        mask_file = temp_file.name
+    cv.imwrite(mask_file, mask)
+    return cv.imread(mask_file, cv.IMREAD_GRAYSCALE)
 
 
 def eliminate_all_letters_from_image(img, mask, radius=10):
