@@ -7,7 +7,7 @@ TOP_LABELS=${6:-1}
 
 rm -rf yolo-export
 source .venv/bin/activate;
-python export-yolov5-annotations.py --db-server $DB_SERVER --db-name $DB_NAME --user $USER --password $PASSWORD --image-size $IMG_SIZE $IMG_SIZE --top-labels $TOP_LABELS --debug;
+python export-yolov5-annotations.py --db-server $DB_SERVER --db-name $DB_NAME --user $USER --password $PASSWORD --image-size $IMG_SIZE $IMG_SIZE --top-labels $TOP_LABELS;
 deactivate;
 # zip -r yolov5-annotations.zip yolo-export/;
 # mv -f yolov5-annotations.zip /var/export/
