@@ -5,10 +5,23 @@ PASSWORD=$4
 IMG_SIZE=${5:-1280}
 TOP_LABELS=${6:-1}
 
-rm -rf yolo-export
+# Remove old export directory if exists
+rm -rf yolo-export;
+
+# Activate virtual environment
 source .venv/bin/activate;
+
+# Export annotations
 python export-yolov5-annotations.py --db-server $DB_SERVER --db-name $DB_NAME --user $USER --password $PASSWORD --image-size $IMG_SIZE $IMG_SIZE --top-labels $TOP_LABELS;
+
+# Deactivate virtual environment
 deactivate;
-# zip -r yolov5-annotations.zip yolo-export/;
-# mv -f yolov5-annotations.zip /var/export/
-# rm -rf yolo-export
+
+# Archive exported data
+zip -r yolov5-annotations-${IMG_SIZE}.zip yolo-export/;
+
+# Move the archive to /var/export/
+mv -f yolov5-annotations-${IMG_SIZE}.zip /var/export/;
+
+# Cleanup
+rm -rf yolo-export;
