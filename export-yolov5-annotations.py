@@ -178,37 +178,30 @@ def export_collection(annotations, destination_directory, original_size_dict,
                                  str(destination_directory / labels_name))
 
 
-def export_letter_annotations(db_server, db_name, user, password, port,
-                              top_labels, image_size, binary_read, output_dir):
+def export_letter_annotations(args):
     """Export letter annotations.
 
     Parameters
     ----------
-    db_server: str, required
-        The database server.
-    db_name: str, required
-        The database name.
-    user: str, required
-        The database user.
-    password: str, required
-        The database password.
-    port: int, required
-        The port for database server.
-    top_labels: float between 0 and 1, optional
-        The top percent of labels to return when ordered descendingly by number of samples.
-    image_size: int, required
-        The size of the exported image in pixels.
-    binary_read: bool, required
-        Specifies whether to read images in black and white or not.
-    output_dir: str, required
-        The root directory of the export.
+    args: argparse.Namespace, required
+        The parameters specified at command-line. Must have the following attributes:
+        - db_server: str - the database server,
+        - db_name: str - the database name,
+        - user: str - the database user,
+        - password: str - the database password,
+        - port: int - the port for database server,
+        - top_labels: float between 0 and 1 - the top percent of labels to return when ordered descendingly by number of samples,
+        - image_size: int - the size of the exported image in pixels,
+        - binary_read: bool - specifies whether to read images in black and white or not,
+        - output_dir: str - the root directory of the export.
     """
     logging.info("Exporting letters in Yolo v5 format.")
-    letters_df = load_letter_annotations(db_server, db_name, (user, password),
-                                         port, top_labels)
+    letters_df = load_letter_annotations(args.db_server, args.db_name,
+                                         (args.user, args.password), args.port,
+                                         args.top_labels)
     logging.info("Creating export directories for letter annotations.")
     staging_dir, train_dir, val_dir, yaml_file = create_export_directories(
-        output_dir, export_type='letters')
+        args.output_dir, export_type='letters')
 
     letter_groups = letters_df.groupby(letters_df.letter)
     image_size_dict = {}
@@ -228,10 +221,10 @@ def export_letter_annotations(db_server, db_name, user, password, port,
                                       random_state=RANDOM_SEED)
         logging.info("Exporting training data.")
         export_collection(train, staging_dir, image_size_dict, args.image_size,
-                          labels_map, binary_read)
+                          labels_map, args.binary_read)
         logging.info("Exporting validation data.")
         export_collection(val, val_dir, image_size_dict, args.image_size,
-                          labels_map, binary_read)
+                          labels_map, args.binary_read)
     labels = sorted(labels_map, key=labels_map.get)
     logging.info("Blurring unmarked letters from all images.")
     blur_out_negative_samples(staging_dir, train_dir)
@@ -244,54 +237,48 @@ def export_letter_annotations(db_server, db_name, user, password, port,
     logging.info("Finished exporting letters in Yolo v5 format.")
 
 
-def export_char_annotations(db_server, db_name, user, password, port,
-                            image_size, binary_read, output_dir):
+def export_char_annotations(args):
     """Export letter annotations under a single label.
 
     Parameters
     ----------
-    db_server: str, required
-        The database server.
-    db_name: str, required
-        The database name.
-    user: str, required
-        The database user.
-    password: str, required
-        The database password.
-    port: int, required
-        The port for database server.
-    image_size: int, required
-        The size of the exported image in pixels.
-    binary_read: bool, required
-        Specifies whether to read images in black and white or not.
-    output_dir: str, required
-        The root directory of the export.
+    args: argparse.Namespace, required
+        The parameters specified at command-line. Must have the following attributes:
+        - db_server: str - the database server,
+        - db_name: str - the database name,
+        - user: str - the database user,
+        - password: str - the database password,
+        - port: int - the port for database server,
+        - image_size: int - the size of the exported image in pixels,
+        - binary_read: bool - specifies whether to read images in black and white or not,
+        - output_dir: str - the root directory of the export.
     """
     logging.info("Exporting characters in Yolo v5 format.")
-    letters_df = load_letter_annotations(db_server,
-                                         db_name, (user, password),
-                                         port,
+    letters_df = load_letter_annotations(args.db_server,
+                                         args.db_name,
+                                         (args.user, args.password),
+                                         args.port,
                                          top_labels=None)
     letters_df.letter = 'char'
     logging.info("Creating export directories for letter annotations.")
     staging_dir, train_dir, val_dir, yaml_file = create_export_directories(
-        output_dir, export_type='characters')
+        args.output_dir, export_type='characters')
     image_size_dict, labels_map = {}, {}
     train, val = train_test_split(letters_df.to_numpy(),
                                   test_size=TEST_SIZE,
                                   random_state=RANDOM_SEED)
 
     logging.info("Exporting training data.")
-    export_collection(train, staging_dir, image_size_dict, image_size,
-                      labels_map, binary_read)
+    export_collection(train, staging_dir, image_size_dict, args.image_size,
+                      labels_map, args.binary_read)
     logging.info("Blurring unmarked letters from all images.")
     blur_out_negative_samples(staging_dir, train_dir)
     if not DEBUG_MODE:
         shutil.rmtree(staging_dir)
 
     logging.info("Exporting validation data.")
-    export_collection(val, val_dir, image_size_dict, image_size, labels_map,
-                      binary_read)
+    export_collection(val, val_dir, image_size_dict, args.image_size,
+                      labels_map, args.binary_read)
     labels = sorted(labels_map, key=labels_map.get)
 
     logging.info(
@@ -301,27 +288,14 @@ def export_char_annotations(db_server, db_name, user, password, port,
     logging.info("Finished exporting characters in Yolo v5 format.")
 
 
-def main(args):
-    """Export annotations in Yolo v5 format.
+def add_common_arguments(parser):
+    """Add common argument to the argument parrser.
 
     Parameters
     ----------
-    args: argparse.Namespace, required
-        The arguments of the script.
+    parser: argparse.ArgumentParser, required
+        The parser to which to add the arguments.
     """
-    export_letter_annotations(args.db_server, args.db_name, args.user,
-                              args.password, args.port, args.top_labels,
-                              args.image_size, args.binary_read,
-                              args.output_dir)
-    export_char_annotations(args.db_server, args.db_name, args.user,
-                            args.password, args.port, args.image_size,
-                            args.binary_read, args.output_dir)
-
-
-def parse_arguments():
-    """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description='Export annotations for Yolo v5.')
     parser.add_argument('--db-server',
                         help="Name or IP address of the database server.",
                         required=True)
@@ -339,11 +313,6 @@ def parse_arguments():
         '--port',
         help="The port of the database server. Default value is 5432.",
         default="5432")
-
-    parser.add_argument('--top-labels',
-                        help="Percentage of top labels to export.",
-                        type=float,
-                        default=0.1)
     parser.add_argument(
         '--output-dir',
         help="The output directory. Default value is './yolo-export'.",
@@ -368,6 +337,28 @@ def parse_arguments():
         '--debug',
         help="Enable debug mode to load less data from database.",
         action='store_true')
+
+
+def parse_arguments():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description='Export annotations for Yolo v5.')
+    subparsers = parser.add_subparsers()
+
+    letters = subparsers.add_parser(
+        'letters', help="Export letter annotations for Yolo v5.")
+    letters.set_defaults(func=export_letter_annotations)
+    add_common_arguments(letters)
+    letters.add_argument('--top-labels',
+                         help="Percentage of top labels to export.",
+                         type=float,
+                         default=0.1)
+
+    characters = subparsers.add_parser(
+        'characters', help="Export character annotations for Yolo v5.")
+    characters.set_defaults(func=export_char_annotations)
+    add_common_arguments(characters)
+
     return parser.parse_args()
 
 
@@ -376,5 +367,5 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                         level=getattr(logging, args.log_level))
     DEBUG_MODE = args.debug
-    main(args)
+    args.func(args)
     logging.info("That's all folks!")

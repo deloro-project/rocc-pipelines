@@ -3,7 +3,7 @@ DB_NAME=$2
 USER=$3
 PASSWORD=$4
 IMG_SIZE=${5:-1280}
-TOP_LABELS=${6:-1}
+
 
 # Remove old export directory if exists
 rm -rf yolo-export;
@@ -12,7 +12,7 @@ rm -rf yolo-export;
 source .venv/bin/activate;
 
 # Export annotations
-python export-yolov5-annotations.py --db-server $DB_SERVER --db-name $DB_NAME --user $USER --password $PASSWORD --image-size $IMG_SIZE $IMG_SIZE --top-labels $TOP_LABELS;
+python export-yolov5-annotations.py characters --db-server $DB_SERVER --db-name $DB_NAME --user $USER --password $PASSWORD --image-size $IMG_SIZE $IMG_SIZE;
 
 # Deactivate virtual environment
 deactivate;
