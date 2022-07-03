@@ -369,15 +369,15 @@ def export_image(src_path, dest_path, width, height, binary_read):
         True if export succeeded; False otherwise.
     """
     logging.info("Exporting image {} to {}.".format(src_path, dest_path))
+    flags = cv.IMREAD_GRAYSCALE if binary_read else cv.IMREAD_COLOR
+    source_img = cv.imread(src_path, flags)
+    if source_img is None:
+        return False
+
     if binary_read:
-        source_img = cv.imread(src_path, cv.IMREAD_GRAYSCALE)
         source_img = cv.adaptiveThreshold(source_img, 255,
                                           cv.ADAPTIVE_THRESH_MEAN_C,
                                           cv.THRESH_BINARY, 11, 2)
-    else:
-        source_img = cv.imread(src_path)
-    if source_img is None:
-        return False
 
     resized_img = cv.resize(source_img, (width, height))
     cv.imwrite(dest_path, resized_img)
