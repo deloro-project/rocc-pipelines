@@ -227,7 +227,9 @@ def export_letter_annotations(args):
                           labels_map, args.binary_read)
     labels = sorted(labels_map, key=labels_map.get)
     logging.info("Blurring unmarked letters from all images.")
-    blur_out_negative_samples(staging_dir, train_dir)
+    blur_out_negative_samples(staging_dir,
+                              train_dir,
+                              num_workers=args.blur_workers)
     if not DEBUG_MODE:
         shutil.rmtree(staging_dir)
     logging.info(
@@ -272,7 +274,9 @@ def export_char_annotations(args):
     export_collection(train, staging_dir, image_size_dict, args.image_size,
                       labels_map, args.binary_read)
     logging.info("Blurring unmarked letters from all images.")
-    blur_out_negative_samples(staging_dir, train_dir)
+    blur_out_negative_samples(staging_dir,
+                              train_dir,
+                              num_workers=args.blur_workers)
     if not DEBUG_MODE:
         shutil.rmtree(staging_dir)
 
@@ -299,24 +303,30 @@ def add_common_arguments(parser):
     parser.add_argument('--db-server',
                         help="Name or IP address of the database server.",
                         required=True)
+
     parser.add_argument('--db-name',
                         help="The name of the database to connect to.",
                         required=True)
+
     parser.add_argument(
         '--user',
         help="The username under which to connect to the database.",
         required=True)
+
     parser.add_argument('--password',
                         help="The password of the user.",
                         required=True)
+
     parser.add_argument(
         '--port',
         help="The port of the database server. Default value is 5432.",
         default="5432")
+
     parser.add_argument(
         '--output-dir',
         help="The output directory. Default value is './yolo-export'.",
         default='./yolo-export')
+
     parser.add_argument(
         '--image-size',
         help="The size of the exported images. Default is [1024, 768].",
@@ -329,10 +339,17 @@ def add_common_arguments(parser):
                         action='store_true')
 
     parser.add_argument(
+        '--blur-workers',
+        help="Number of images being blurred at the same time. Default is -2.",
+        type=int,
+        default=-2)
+
+    parser.add_argument(
         '--log-level',
         help="The level of details to print when running.",
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         default='INFO')
+
     parser.add_argument(
         '--debug',
         help="Enable debug mode to load less data from database.",

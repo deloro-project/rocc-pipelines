@@ -333,7 +333,7 @@ def apply_mask_and_export(image_file, labels_file, export_dir):
 
 def blur_out_negative_samples(staging_dir,
                               train_dir,
-                              num_jobs=-2,
+                              num_workers=-2,
                               verbosity=11):
     """Apply a blur mask on the unannotated letters in the images.
 
@@ -342,9 +342,12 @@ def blur_out_negative_samples(staging_dir,
     staging_dir: pathlib.Path, required
         Directory containing original, resized images.
     train_dir: pathlib.Path, required
-        Directory where we copy the images after being cleaned of negative samples
+        Directory where we copy the images after being cleaned of negative samples.
+    num_workers: int, optional
+        The maximum number of concurrently processed images. Default is -2 which means
+        use all but one CPUs.
     """
-    Parallel(n_jobs=num_jobs, verbose=verbosity)(
+    Parallel(n_jobs=num_workers, verbose=verbosity)(
         delayed(apply_mask_and_export)(img_file, labels_file, train_dir)
         for img_file, labels_file in iterate_yolo_directory(staging_dir))
 
