@@ -23,11 +23,17 @@ fi
 # Deactivate virtual environment
 deactivate;
 
+ARCHIVE_FILE=yolov5-annotations-${IMG_SIZE}-${IMG_TYPE}.zip
 # Archive exported data
-zip -r yolov5-annotations-${IMG_SIZE}-${IMG_TYPE}.zip yolo-export/;
+echo "Compressing exported data to ${ARCHIVE_FILE}."
+zip -r $ARCHIVE_FILE yolo-export/;
 
 # Move the archive to /var/export/
+echo "Moving ${ARCHIVE_FILE} to /var/export/."
 mv -f yolov5-annotations-${IMG_SIZE}-${IMG_TYPE}.zip /var/export/;
 
 # Cleanup
+echo "Cleaning up export directory."
 rm -rf yolo-export;
+
+echo "Done."
