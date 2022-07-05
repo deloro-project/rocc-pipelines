@@ -334,7 +334,7 @@ def apply_mask_and_export(image_file, labels_file, export_dir):
 def blur_out_negative_samples(staging_dir,
                               train_dir,
                               num_workers=-2,
-                              verbosity=11):
+                              verbosity=0):
     """Apply a blur mask on the unannotated letters in the images.
 
     Parameters

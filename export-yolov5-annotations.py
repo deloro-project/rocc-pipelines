@@ -227,9 +227,11 @@ def export_letter_annotations(args):
                           labels_map, args.binary_read)
     labels = sorted(labels_map, key=labels_map.get)
     logging.info("Blurring unmarked letters from all images.")
+    blur_verbosity = 11 if DEBUG_MODE else 0
     blur_out_negative_samples(staging_dir,
                               train_dir,
-                              num_workers=args.blur_workers)
+                              num_workers=args.blur_workers,
+                              verbosity=blur_verbosity)
     if not DEBUG_MODE:
         shutil.rmtree(staging_dir)
     logging.info(
@@ -274,9 +276,11 @@ def export_char_annotations(args):
     export_collection(train, staging_dir, image_size_dict, args.image_size,
                       labels_map, args.binary_read)
     logging.info("Blurring unmarked letters from all images.")
+    blur_verbosity = 11 if DEBUG_MODE else 0
     blur_out_negative_samples(staging_dir,
                               train_dir,
-                              num_workers=args.blur_workers)
+                              num_workers=args.blur_workers,
+                              verbosity=blur_verbosity)
     if not DEBUG_MODE:
         shutil.rmtree(staging_dir)
 
