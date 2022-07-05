@@ -3,24 +3,9 @@ DB_NAME=$2
 USER=$3
 PASSWORD=$4
 IMG_SIZE=${5:-1280}
-IMG_TYPE="color"
+IMG_TYPE=$6
 
-while getopts 'gc' OPTION; do
-    case "$OPTION" in
-	c)
-	    IMG_TYPE="color"
-	    ;;
-	g)
-	    IMG_TYPE="grayscale"
-	    ;;
-	?)
-	    echo "script usage: $(basename \$0) [-g] [-c] db-server db-name user password img-size" >&2
-	    exit 1
-	    ;;
-    esac
-done
-
-echo "Exporting images in ${IMG_TYPE}."
+echo "Exporting images at ${IMG_SIZE}x${IMG_SIZE} in ${IMG_TYPE}."
 
 # Remove old export directory if exists
 rm -rf yolo-export;
