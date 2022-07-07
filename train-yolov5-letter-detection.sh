@@ -3,39 +3,51 @@
 # Script arguments
 SERVER=$1
 USER=$2
-PASSWORD=$3
-MODEL=$4
+MODEL=$3
 
 # Constants
-YOLO_DIR=/var/training/yolov5
+YOLO_DIR=~/training/yolov5
 EPOCHS=(300 600 900)
+DATA_DIR=~/training/data
+EXPERIMENTS_DIR=~/training/experiments
 
+# Create training directory.
+mkdir -p  ~/training
 
 # Create directory where to store training data.
-mkdir -p /var/training/data
+mkdir -p $DATA_DIR
 
 # Create directory where to store experiment results.
-mkdir -p /var/training/experiments
+mkdir -p $EXPERIMENTS_DIR
 
 # Navigate to data directory.
-cd /var/training/data
+cd $DATA_DIR
 
 # Remove old data if present.
+echo "Cleaning directory ${DATA_DIR}."
 rm -rf *.zip
 
 # Secure copy the training data.
-sshpass -p $PASSWORD scp $USER@$SERVER:/var/export/yolov5-annotations-*.zip
+echo "Copying training sets to ${DATA_DIR}."
+scp $USER@$SERVER:/var/export/yolov5-annotations-*.zip $DATA_DIR
 
 # Navigate to the yolov5 directory
 cd $YOLO_DIR
 
 # Iterate training params and train for each combination.
-for num_epochs in "${EPOCHS[@]}" do
-    for file in /var/training/data/*.zip; do
-        # Remove old training data if present.
-        rm -rf yolo-export deloro
-        # Extract training data.
+echo "Start training."
+for num_epochs in "${EPOCHS[@]}"
+do
+    for file in $DATA_DIR/*.zip; do
+	echo "Training on set ${file} for ${num_epochs} epochs."
+        cd $YOLO_DIR/data
+
+	echo "Removing old training data."
+        rm -rf yolo-export deloro *.zip
+
+	echo "Uncompressing ${file} into ${YOLO_DIR}/data directory."
         unzip $file -d .
+	echo "Preparing training set."
         # Rename yolo-export to deloro.
         mv yolo-export deloro
         # Fix paths in YAML file
@@ -44,6 +56,8 @@ for num_epochs in "${EPOCHS[@]}" do
         img_size=$(echo $file | cut -d'-' -f3)
         # Get the image type. First, split by '.' to remove the extension, and then split by '-' and take the 4th field.
         img_type=$(echo $file | cut -d'.' -f1 | cut -d'-' -f4)
+	echo "Start training for ${num_epochs} epochs on ${img_type} images of size ${img_size}x${img_size}."
+
         # Activate virtual environment.
         cd $YOLO_DIR
         source .venv/bin/activate
@@ -52,7 +66,7 @@ for num_epochs in "${EPOCHS[@]}" do
         # Deactivate virtual environment.
         deactivate
 
-	# Export run results to /var/training/experiments.
+	# Export run results to $EXPERIMENTS_DIR.
 	# Navigate to results directory.
 	cd $YOLO_DIR/runs/train
 	# Get model name without extension.
@@ -61,7 +75,7 @@ for num_epochs in "${EPOCHS[@]}" do
 	$experiment_archive="${model_name}-epochs-${num_epochs}-size-${img_size}-type-${img_type}.zip"
 	# Archive the run results.
 	zip -r $experiment_archive exp/
-	mv -f $experiment_archive /var/training/experiments
+	mv -f $experiment_archive $EXPERIMENTS_DIR
 	# Remove the run results
 	rm -rf exp
     done
