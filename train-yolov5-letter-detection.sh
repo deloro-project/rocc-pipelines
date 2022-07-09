@@ -67,12 +67,13 @@ do
         deactivate
 
 	# Export run results to $EXPERIMENTS_DIR.
+	# Get model name without extension.
+	model_name=$(echo $MODEL | cut -d'.' -f1)
+	# Build the file name of the archive of current results.
+	experiment_archive="${model_name}-epochs-${num_epochs}-size-${img_size}-type-${img_type}.zip"
+	echo "Training finished; exporting experiment results to ${experiment_archive}."
 	# Navigate to results directory.
 	cd $YOLO_DIR/runs/train
-	# Get model name without extension.
-	$model_name=$(echo $MODEL | cut -d'.' -f1)
-	# Build the file name of the archive of current results.
-	$experiment_archive="${model_name}-epochs-${num_epochs}-size-${img_size}-type-${img_type}.zip"
 	# Archive the run results.
 	zip -r $experiment_archive exp/
 	mv -f $experiment_archive $EXPERIMENTS_DIR
