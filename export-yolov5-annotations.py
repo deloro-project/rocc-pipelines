@@ -210,9 +210,6 @@ def export_char_annotations(args):
     logging.info("Creating export directories for letter annotations.")
     staging_dir, train_dir, val_dir, yaml_file = create_export_directories(
         args.output_dir, export_type='characters')
-    train, val = train_test_split(letters_df.to_numpy(),
-                                  test_size=TEST_SIZE,
-                                  random_state=RANDOM_SEED)
 
     logging.info("Exporting data to staging directory {}.".format(
         str(staging_dir)))
@@ -225,12 +222,13 @@ def export_char_annotations(args):
     blur_out_negative_samples(staging_dir,
                               num_workers=args.blur_workers,
                               verbosity=blur_verbosity)
-    if not DEBUG_MODE:
-        shutil.rmtree(staging_dir)
+
+    logging.info("Exporting training data.")
 
     logging.info("Exporting validation data.")
-    export_collection(val, val_dir, image_size_dict, args.image_size,
-                      labels_map, args.binary_read)
+
+    if not DEBUG_MODE:
+        shutil.rmtree(staging_dir)
     labels = sorted(labels_map, key=labels_map.get)
 
     logging.info(
