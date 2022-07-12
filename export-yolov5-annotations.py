@@ -137,8 +137,8 @@ def get_export_file_names(image_path):
     return image_name, labels_name
 
 
-def export_collection(annotations, destination_directory, original_size_dict,
-                      image_size, labels_map, binary_read):
+def export_collection(annotations, destination_directory, image_size,
+                      binary_read):
     """Export collection of annotations to destination directory.
 
     Parameters
@@ -147,13 +147,18 @@ def export_collection(annotations, destination_directory, original_size_dict,
         The collection of annotations to export.
     destination_directory: pathlib.Path, required
         The destination directory.
-    original_size_dict: dict of (str, (int, int)), required
-        The dict mapping exported image names to their original size.
     image_size: tuple of (int, int), required
         The size of exported images.
-    labels_map: dict of (str, int), required
-        The dictionary  that maps between a label and its index.
+    binary_read: bool, required
+        Specifies whether to read images in grayscale or color.
+
+    Returns
+    -------
+    (original_size_dict, labels_map): tuple of (dict of (str, (int, int)), dict of (str, int))
+        The original_size_dict maps the exported image names to their original size,
+        and labels_map maps labels to their indices.
     """
+    original_size_dict, labels_map = {}, {}
     image_width, image_height = image_size
     for file_name, letter, *coords in annotations:
         image_name, labels_name = get_export_file_names(file_name)
@@ -205,14 +210,16 @@ def export_char_annotations(args):
     logging.info("Creating export directories for letter annotations.")
     staging_dir, train_dir, val_dir, yaml_file = create_export_directories(
         args.output_dir, export_type='characters')
-    image_size_dict, labels_map = {}, {}
     train, val = train_test_split(letters_df.to_numpy(),
                                   test_size=TEST_SIZE,
                                   random_state=RANDOM_SEED)
 
-    logging.info("Exporting training data.")
-    export_collection(train, staging_dir, image_size_dict, args.image_size,
-                      labels_map, args.binary_read)
+    logging.info("Exporting data to staging directory {}.".format(
+        str(staging_dir)))
+    image_size_dict, labels_map = export_collection(letters_df.to_numpy(),
+                                                    staging_dir,
+                                                    args.image_size,
+                                                    args.binary_read)
     logging.info("Blurring unmarked letters from all images.")
     blur_verbosity = 11 if DEBUG_MODE else 0
     blur_out_negative_samples(staging_dir,
