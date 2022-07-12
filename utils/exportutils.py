@@ -326,18 +326,13 @@ def apply_mask(image_file, labels_file):
     cv.imwrite(image_file, img)
 
 
-def blur_out_negative_samples(staging_dir,
-                              train_dir,
-                              num_workers=-2,
-                              verbosity=0):
+def blur_out_negative_samples(data_dir, num_workers=-2, verbosity=0):
     """Apply a blur mask on the unannotated letters in the images.
 
     Parameters
     ----------
-    staging_dir: pathlib.Path, required
+    data_dir: pathlib.Path, required
         Directory containing original, resized images.
-    train_dir: pathlib.Path, required
-        Directory where we copy the images after being cleaned of negative samples.
     num_workers: int, optional
         The maximum number of concurrently processed images. Default is -2 which means
         use all but one CPUs.
