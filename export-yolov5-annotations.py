@@ -176,69 +176,7 @@ def export_collection(annotations, destination_directory, original_size_dict,
         export_yolov5_annotation(label_index, x1, y1, x2, y2,
                                  original_image_size, image_size,
                                  str(destination_directory / labels_name))
-
-
-def export_letter_annotations(args):
-    """Export letter annotations.
-
-    Parameters
-    ----------
-    args: argparse.Namespace, required
-        The parameters specified at command-line. Must have the following attributes:
-        - db_server: str - the database server,
-        - db_name: str - the database name,
-        - user: str - the database user,
-        - password: str - the database password,
-        - port: int - the port for database server,
-        - top_labels: float between 0 and 1 - the top percent of labels to return when ordered descendingly by number of samples,
-        - image_size: int - the size of the exported image in pixels,
-        - binary_read: bool - specifies whether to read images in black and white or not,
-        - output_dir: str - the root directory of the export.
-    """
-    logging.info("Exporting letters in Yolo v5 format.")
-    letters_df = load_letter_annotations(args.db_server, args.db_name,
-                                         (args.user, args.password), args.port,
-                                         args.top_labels)
-    logging.info("Creating export directories for letter annotations.")
-    staging_dir, train_dir, val_dir, yaml_file = create_export_directories(
-        args.output_dir, export_type='letters')
-
-    letter_groups = letters_df.groupby(letters_df.letter)
-    image_size_dict = {}
-    labels_map = {}
-    for letter, group in letter_groups:
-        logging.info("Exporting data for label {}.".format(letter))
-        ds = group.to_numpy()
-        num_samples, _ = ds.shape
-        if num_samples < 2:
-            logging.warning(
-                "There are not enough samples to split for label {}.".format(
-                    letter))
-            continue
-
-        train, val = train_test_split(ds,
-                                      test_size=TEST_SIZE,
-                                      random_state=RANDOM_SEED)
-        logging.info("Exporting training data.")
-        export_collection(train, staging_dir, image_size_dict, args.image_size,
-                          labels_map, args.binary_read)
-        logging.info("Exporting validation data.")
-        export_collection(val, val_dir, image_size_dict, args.image_size,
-                          labels_map, args.binary_read)
-    labels = sorted(labels_map, key=labels_map.get)
-    logging.info("Blurring unmarked letters from all images.")
-    blur_verbosity = 11 if DEBUG_MODE else 0
-    blur_out_negative_samples(staging_dir,
-                              train_dir,
-                              num_workers=args.blur_workers,
-                              verbosity=blur_verbosity)
-    if not DEBUG_MODE:
-        shutil.rmtree(staging_dir)
-    logging.info(
-        "Saving letters dataset description file to {}.".format(yaml_file))
-    save_dataset_description(str(staging_dir), str(val_dir), labels,
-                             str(yaml_file))
-    logging.info("Finished exporting letters in Yolo v5 format.")
+    return original_size_dict, labels_map
 
 
 def export_char_annotations(args):
@@ -365,15 +303,6 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description='Export annotations for Yolo v5.')
     subparsers = parser.add_subparsers()
-
-    letters = subparsers.add_parser(
-        'letters', help="Export letter annotations for Yolo v5.")
-    letters.set_defaults(func=export_letter_annotations)
-    add_common_arguments(letters)
-    letters.add_argument('--top-labels',
-                         help="Percentage of top labels to export.",
-                         type=float,
-                         default=0.1)
 
     characters = subparsers.add_parser(
         'characters', help="Export character annotations for Yolo v5.")
