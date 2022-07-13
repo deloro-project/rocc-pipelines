@@ -61,7 +61,7 @@ def iterate_yolo_directory(directory_path, image_extension='.png'):
 
     Returns
     -------
-    iterator of (image, labels_file): iterator of tuple of (str, str)
+    iterator of (image, labels_file): iterator of tuple of (pathlib.Path, pathlib.Path)
         The pairs of image file and associated labels file.
     """
     for image_file in directory_path.glob("*{}".format(image_extension)):
@@ -70,4 +70,4 @@ def iterate_yolo_directory(directory_path, image_extension='.png'):
             logging.warning(
                 "Could not find labels file for image {}.".format(image_file))
             continue
-        yield str(image_file), str(labels_file)
+        yield image_file, labels_file
