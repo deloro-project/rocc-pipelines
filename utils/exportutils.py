@@ -414,3 +414,20 @@ names: {names}
                                 val=val,
                                 nc=len(labels),
                                 names=names))
+
+
+def move_images_and_labels(images_and_labels, source_dir, destination_dir):
+    """Move the specified collection of images and labels from source to destination directory.
+
+    Parameters
+    ----------
+    images_and_labels: iterable of tuples of (str, str), required
+        The collection of tuples (image_name, labels_name) to move from source to destination directory.
+    source_dir: pathlib.Path, required
+        The source directory.
+    destination_dir: pathlib.Path, required
+        The destination directory.
+    """
+    for image, labels in images_and_labels:
+        image.rename(destination_dir / image.name)
+        labels.rename(destination_dir / labels.name)
