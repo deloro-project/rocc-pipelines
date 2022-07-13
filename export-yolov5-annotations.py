@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-"""Exports letter and line annotations into Yolo v5 format."""
+"""Exports character annotations into Yolo v5 format."""
 import argparse
 import logging
 from utils.exportutils import load_annotations, create_directories
 from utils.exportutils import export_image, export_yolov5_annotation
 from utils.exportutils import save_dataset_description, blur_out_negative_samples
 from utils.exportutils import get_cv2_image_size
+from utils.yolov5utils import iterate_yolo_directory
+from utils.exportutils import move_images_and_labels
 from pathlib import Path
 import shutil
 
@@ -138,8 +140,8 @@ def get_export_file_names(image_path):
     return image_name, labels_name
 
 
-def export_collection(annotations, destination_directory, image_size,
-                      binary_read):
+def export_annotations(annotations, destination_directory, image_size,
+                       binary_read):
     """Export collection of annotations to destination directory.
 
     Parameters
@@ -214,26 +216,36 @@ def export_char_annotations(args):
 
     logging.info("Exporting data to staging directory {}.".format(
         str(staging_dir)))
-    image_size_dict, labels_map = export_collection(letters_df.to_numpy(),
-                                                    staging_dir,
-                                                    args.image_size,
-                                                    args.binary_read)
+    image_size_dict, labels_map = export_annotations(letters_df.to_numpy(),
+                                                     staging_dir,
+                                                     args.image_size,
+                                                     args.binary_read)
+
     logging.info("Blurring unmarked letters from all images.")
     blur_verbosity = 11 if DEBUG_MODE else 0
     blur_out_negative_samples(staging_dir,
                               num_workers=args.blur_workers,
                               verbosity=blur_verbosity)
 
+    logging.info("Splitting annotations into train/val sets.")
+    data = [(img, labels)
+            for img, labels in iterate_yolo_directory(staging_dir)]
+    train, val = train_test_split(data,
+                                  test_size=TEST_SIZE,
+                                  random_state=RANDOM_SEED)
+
     logging.info("Exporting training data.")
+    move_images_and_labels(train, staging_dir, train_dir)
 
     logging.info("Exporting validation data.")
+    move_images_and_labels(val, staging_dir, val_dir)
 
-    if not DEBUG_MODE:
-        shutil.rmtree(staging_dir)
-    labels = sorted(labels_map, key=labels_map.get)
+    logging.info("Removing staging directory.")
+    shutil.rmtree(staging_dir)
 
     logging.info(
         "Saving characters dataset description file to {}.".format(yaml_file))
+    labels = sorted(labels_map, key=labels_map.get)
     save_dataset_description(str(train_dir), str(val_dir), labels,
                              str(yaml_file))
     logging.info("Finished exporting characters in Yolo v5 format.")
