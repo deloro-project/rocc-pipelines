@@ -90,7 +90,7 @@ def scale_point(point, original_size, export_size):
     scaled_point: tuple of (int, int)
         The point scaled from original image size to exported image size.
     """
-    original_height, original_width, _ = original_size
+    original_width, original_height = original_size
     export_width, export_height = export_size
     x_scale = export_width / original_width
     y_scale = export_height / original_height

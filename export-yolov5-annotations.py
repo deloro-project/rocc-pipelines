@@ -5,6 +5,7 @@ import logging
 from utils.exportutils import load_annotations, create_directories
 from utils.exportutils import export_image, export_yolov5_annotation
 from utils.exportutils import save_dataset_description, blur_out_negative_samples
+from utils.exportutils import get_cv2_image_size
 from pathlib import Path
 import shutil
 
@@ -168,7 +169,7 @@ def export_collection(annotations, destination_directory, image_size,
                 image_width, image_height, binary_read)
             if image_exported:
                 img = cv.imread(file_name)
-                original_size_dict[image_name] = img.shape
+                original_size_dict[image_name] = get_cv2_image_size(img)
             else:
                 logging.error("Could not export image {}.".format(file_name))
                 continue
