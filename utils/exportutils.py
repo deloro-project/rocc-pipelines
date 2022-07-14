@@ -338,7 +338,7 @@ def blur_out_negative_samples(data_dir, num_workers=-2, verbosity=0):
         use all but one CPUs.
     """
     Parallel(n_jobs=num_workers, verbose=verbosity)(
-        delayed(apply_mask)(img_file, labels_file)
+        delayed(apply_mask)(str(img_file), str(labels_file))
         for img_file, labels_file in iterate_yolo_directory(data_dir))
 
 
