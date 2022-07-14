@@ -279,7 +279,7 @@ def get_mask_coordinates(image_size):
         The minimum point on the top left, and the maximum point on the bottom right from annotations.
     """
     width, height = image_size
-    return (30, 30), (width - 30, height - 30)
+    return (20, 20), (width - 20, height - 20)
 
 
 def get_path_for_move(file_name, target_dir):
