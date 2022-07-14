@@ -15,6 +15,7 @@ import cv2 as cv
 from sklearn.model_selection import train_test_split
 
 DEBUG_MODE = False
+NUM_DEBUG_SAMPLES = 100
 RANDOM_SEED = 2022
 TEST_SIZE = 0.2
 
@@ -83,9 +84,9 @@ def load_letter_annotations(db_server,
 
     if DEBUG_MODE:
         logging.info(
-            "Running in debug mode; database results are truncated to 100 rows."
-        )
-        letters_df = letters_df.head(100)
+            "Running in debug mode; database results are truncated to {} rows."
+            .format(NUM_DEBUG_SAMPLES))
+        letters_df = letters_df.head(NUM_DEBUG_SAMPLES)
 
     if top_labels:
         return filter_letter_annotations(letters_df, top_labels)
