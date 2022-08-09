@@ -342,7 +342,7 @@ def blur_out_negative_samples(data_dir, num_workers=-2, verbosity=0):
         for img_file, labels_file in iterate_yolo_directory(data_dir))
 
 
-def export_image(src_path, dest_path, width, height, binary_read):
+def export_image(src_path, dest_path, image_size, binary_read):
     """Export and resize the image.
 
     Parameters
@@ -351,10 +351,8 @@ def export_image(src_path, dest_path, width, height, binary_read):
         The source path of the image.
     dest_path: str, required
         The destination path of the image.
-    width: int, required
-        Width of the exported image.
-    height: int, required
-        Height of the exported image.
+    image_size: tuple of (int, int), required
+        The size of the exporte image in (width, height) format.
 
     Returns
     -------
@@ -371,8 +369,8 @@ def export_image(src_path, dest_path, width, height, binary_read):
         source_img = cv.adaptiveThreshold(source_img, 255,
                                           cv.ADAPTIVE_THRESH_MEAN_C,
                                           cv.THRESH_BINARY, 11, 2)
-
-    resized_img = cv.resize(source_img, (width, height))
+    if image_size is not None:
+        resized_img = cv.resize(source_img, image_size)
     cv.imwrite(dest_path, resized_img)
     return True
 

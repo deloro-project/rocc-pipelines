@@ -163,13 +163,12 @@ def export_annotations(annotations, destination_directory, image_size,
         and labels_map maps labels to their indices.
     """
     original_size_dict, labels_map = {}, {}
-    image_width, image_height = image_size
     for file_name, letter, *coords in annotations:
         image_name, labels_name = get_export_file_names(file_name)
         if image_name not in original_size_dict:
             image_exported = export_image(
-                file_name, str(destination_directory / image_name),
-                image_width, image_height, binary_read)
+                file_name, str(destination_directory / image_name), image_size,
+                binary_read)
             if image_exported:
                 img = cv.imread(file_name)
                 original_size_dict[image_name] = get_cv2_image_size(img)
