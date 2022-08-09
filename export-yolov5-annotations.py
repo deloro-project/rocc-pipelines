@@ -287,12 +287,12 @@ def add_common_arguments(parser):
         help="The output directory. Default value is './yolo-export'.",
         default='./yolo-export')
 
-    parser.add_argument(
-        '--image-size',
-        help="The size of the exported images. Default is [1024, 768].",
-        type=int,
-        nargs=2,
-        default=[1024, 786])
+    parser.add_argument('--image-size',
+                        help="""The size of the exported images.
+                        If omitted, the images will be exported in original resolution.""",
+                        type=int,
+                        nargs=2,
+                        default=None)
 
     parser.add_argument('--binary-read',
                         help="Sample the images as black and white.",
