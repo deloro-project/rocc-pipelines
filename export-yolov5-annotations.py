@@ -201,6 +201,7 @@ def export_char_annotations(args):
         - port: int - the port for database server,
         - image_size: int - the size of the exported image in pixels,
         - binary_read: bool - specifies whether to read images in black and white or not,
+        - blur_negative_samples: bool - specifies whether to blur negative samples on exported images or not,
         - output_dir: str - the root directory of the export.
     """
     logging.info("Exporting characters in Yolo v5 format.")
@@ -221,11 +222,12 @@ def export_char_annotations(args):
                                                      args.image_size,
                                                      args.binary_read)
 
-    logging.info("Blurring unmarked letters from all images.")
-    blur_verbosity = 11 if DEBUG_MODE else 0
-    blur_out_negative_samples(staging_dir,
-                              num_workers=args.blur_workers,
-                              verbosity=blur_verbosity)
+    if args.blur_negative_samples:
+        logging.info("Blurring unmarked letters from all images.")
+        blur_verbosity = 11 if DEBUG_MODE else 0
+        blur_out_negative_samples(staging_dir,
+                                  num_workers=args.blur_workers,
+                                  verbosity=blur_verbosity)
 
     logging.info("Splitting annotations into train/val sets.")
     data = [(img, labels)
@@ -296,6 +298,10 @@ def add_common_arguments(parser):
     parser.add_argument('--binary-read',
                         help="Sample the images as black and white.",
                         action='store_true')
+    parser.add_argument(
+        '--blur-negative-samples',
+        help="Enable blurring of negative samples in the export.",
+        action='store_true')
 
     parser.add_argument(
         '--blur-workers',
