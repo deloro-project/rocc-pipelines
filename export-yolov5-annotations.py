@@ -181,9 +181,10 @@ def export_annotations(annotations, destination_directory, image_size,
         label_index = labels_map[letter]
         x1, y1, x2, y2 = coords
         original_image_size = original_size_dict[image_name]
-        export_yolov5_annotation(label_index, x1, y1, x2, y2,
-                                 original_image_size, image_size,
-                                 str(destination_directory / labels_name))
+        export_yolov5_annotation(
+            label_index, x1, y1, x2, y2, original_image_size,
+            image_size if image_size is not None else original_image_size,
+            str(destination_directory / labels_name))
     return original_size_dict, labels_map
 
 
