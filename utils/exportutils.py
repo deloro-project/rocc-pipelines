@@ -369,9 +369,12 @@ def export_image(src_path, dest_path, image_size, binary_read):
         source_img = cv.adaptiveThreshold(source_img, 255,
                                           cv.ADAPTIVE_THRESH_MEAN_C,
                                           cv.THRESH_BINARY, 11, 2)
+    output_img = source_img
+
     if image_size is not None:
-        resized_img = cv.resize(source_img, image_size)
-    cv.imwrite(dest_path, resized_img)
+        output_img = cv.resize(source_img, image_size)
+
+    cv.imwrite(dest_path, output_img)
     return True
 
 
