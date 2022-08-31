@@ -15,9 +15,24 @@ source .venv/bin/activate;
 
 # Export annotations
 if [ "$IMG_TYPE" = 'grayscale' ]; then
-    python export-yolov5-annotations.py characters --db-server $DB_SERVER --db-name $DB_NAME --user $USER --password $PASSWORD --image-size $IMG_SIZE $IMG_SIZE --binary-read --log-level ERROR;
+    python export-yolov5-annotations.py characters \
+	   --db-server $DB_SERVER \
+	   --db-name $DB_NAME \
+	   --user $USER \
+	   --password $PASSWORD \
+	   --image-size $IMG_SIZE $IMG_SIZE \
+	   --blur-negative-samples \
+	   --binary-read \
+	   --log-level ERROR;
 else
-    python export-yolov5-annotations.py characters --db-server $DB_SERVER --db-name $DB_NAME --user $USER --password $PASSWORD --image-size $IMG_SIZE $IMG_SIZE --log-level ERROR;
+    python export-yolov5-annotations.py characters \
+	   --db-server $DB_SERVER \
+	   --db-name $DB_NAME \
+	   --user $USER \
+	   --password $PASSWORD \
+	   --image-size $IMG_SIZE $IMG_SIZE \
+	   --blur-negative-samples \
+	   --log-level ERROR;
 fi
 
 # Deactivate virtual environment
