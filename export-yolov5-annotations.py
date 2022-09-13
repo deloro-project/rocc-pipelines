@@ -2,7 +2,8 @@
 """Exports character annotations into Yolo v5 format."""
 import argparse
 import logging
-from utils.exportutils import load_annotations, create_directories
+import utils.database as db
+from utils.exportutils import create_directories
 from utils.exportutils import export_image, export_yolov5_annotation
 from utils.exportutils import save_dataset_description, blur_out_negative_samples
 from utils.exportutils import get_cv2_image_size
@@ -15,83 +16,8 @@ import cv2 as cv
 from sklearn.model_selection import train_test_split
 
 DEBUG_MODE = False
-NUM_DEBUG_SAMPLES = 100
 RANDOM_SEED = 2022
 TEST_SIZE = 0.2
-
-
-def filter_letter_annotations(letters_df, top_size):
-    """Filter letter annotations by top number of samples.
-
-    Parameters
-    ----------
-    letters_df: pandas.DataFrame, required
-        The dataframe containing letter annotations.
-    top_size: float, required
-        The percent of top labels to return sorted by size.
-
-    Returns
-    -------
-    letters_df: pandas.DataFrame
-        The filtered dataframe.
-    """
-    logging.info("Filtering letter annotations to top {} percent.".format(
-        top_size * 100))
-    labels = list(letters_df.letter.unique())
-    _, x = train_test_split(labels,
-                            test_size=top_size,
-                            random_state=RANDOM_SEED)
-    letter_groups = letters_df.groupby(
-        letters_df.letter)['letter'].count().nlargest(len(x))
-    letter_groups = list(letter_groups.index)
-    logging.info("Only the following labels will be exported: {}.".format(
-        ', '.join(letter_groups)))
-    return letters_df[letters_df.letter.map(lambda l: l in letter_groups)]
-
-
-def load_letter_annotations(db_server,
-                            db_name,
-                            credentials,
-                            port,
-                            top_labels=None):
-    """Load letter annotations from database and optionally filters the ones with higher number of samples.
-
-    Parameters
-    ----------
-    db_server: str, required
-        The database server.
-    db_name: str, required
-        The database name.
-    credentials: tuple of (str, str), required
-        The user name and password for connecting to the database.
-    port: int, required
-        The port for database server.
-    top_labels: float between 0 and 1, optional
-        The top percent of labels to return when ordered descendingly by number of samples.
-        Default is None; when 0 or None returns all labels.
-
-    Returns
-    -------
-    letters_df: pandas.DataFrame
-        The dataframe containing letter annotations.
-    """
-    user, password = credentials
-    letters_df, _ = load_annotations(db_server, db_name, user, password, port)
-    letters_df = letters_df[[
-        'page_file_name', 'letter', 'left_up_horiz', 'left_up_vert',
-        'right_down_horiz', 'right_down_vert'
-    ]]
-
-    if DEBUG_MODE:
-        logging.info(
-            "Running in debug mode; database results are truncated to {} rows."
-            .format(NUM_DEBUG_SAMPLES))
-        letters_df = letters_df.head(NUM_DEBUG_SAMPLES)
-
-    if top_labels:
-        return filter_letter_annotations(letters_df, top_labels)
-
-    return letters_df
 
 
 def create_export_directories(output_directory, export_type):
@@ -206,11 +132,11 @@ def export_char_annotations(args):
         - output_dir: str - the root directory of the export.
     """
     logging.info("Exporting characters in Yolo v5 format.")
-    letters_df = load_letter_annotations(args.db_server,
-                                         args.db_name,
-                                         (args.user, args.password),
-                                         args.port,
-                                         top_labels=None)
+    letters_df = db.load_letter_annotations(args.db_server,
+                                            args.db_name,
+                                            (args.user, args.password),
+                                            args.port,
+                                            top_labels=None)
     letters_df.letter = 'char'
     logging.info("Creating export directories for letter annotations.")
     staging_dir, train_dir, val_dir, yaml_file = create_export_directories(
@@ -340,6 +266,7 @@ if __name__ == '__main__':
     args = parse_arguments()
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                         level=getattr(logging, args.log_level))
-    DEBUG_MODE = args.debug
+    db.DEBUG_MODE = DEBUG_MODE = args.debug
+    db.RANDOM_SEED = RANDOM_SEED = 2022
     args.func(args)
     logging.info("That's all folks!")

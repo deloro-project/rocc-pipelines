@@ -2,7 +2,7 @@
 import logging
 from pathlib import Path
 import argparse
-from utils.exportutils import load_annotations
+from utils.database import load_annotations
 import numpy as np
 
 
