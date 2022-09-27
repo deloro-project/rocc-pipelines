@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Exports character annotations into Yolo v5 format."""
+"""Exports character annotations on full images into Yolo v5 format."""
 import argparse
 import logging
 import utils.database as db
@@ -180,14 +180,12 @@ def export_char_annotations(args):
     logging.info("Finished exporting characters in Yolo v5 format.")
 
 
-def add_common_arguments(parser):
-    """Add common argument to the argument parrser.
+def parse_arguments():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description='Export annotations on full images for Yolo v5.')
+    parser.set_defaults(func=export_char_annotations)
 
-    Parameters
-    ----------
-    parser: argparse.ArgumentParser, required
-        The parser to which to add the arguments.
-    """
     parser.add_argument('--db-server',
                         help="Name or IP address of the database server.",
                         required=True)
@@ -246,19 +244,6 @@ def add_common_arguments(parser):
         '--debug',
         help="Enable debug mode to load less data from database.",
         action='store_true')
-
-
-def parse_arguments():
-    """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description='Export annotations for Yolo v5.')
-    subparsers = parser.add_subparsers()
-
-    characters = subparsers.add_parser(
-        'characters', help="Export character annotations for Yolo v5.")
-    characters.set_defaults(func=export_char_annotations)
-    add_common_arguments(characters)
-
     return parser.parse_args()
 
 

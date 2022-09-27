@@ -15,7 +15,7 @@ source .venv/bin/activate;
 
 # Export annotations
 if [ "$IMG_TYPE" = 'grayscale' ]; then
-    python export-yolov5-annotations.py characters \
+    python export-yolov5-annotations.py \
 	   --db-server $DB_SERVER \
 	   --db-name $DB_NAME \
 	   --user $USER \
@@ -25,7 +25,7 @@ if [ "$IMG_TYPE" = 'grayscale' ]; then
 	   --binary-read \
 	   --log-level ERROR;
 else
-    python export-yolov5-annotations.py characters \
+    python export-yolov5-annotations.py \
 	   --db-server $DB_SERVER \
 	   --db-name $DB_NAME \
 	   --user $USER \
