@@ -30,4 +30,4 @@ jobs:
       - name: Update pipelines
         run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && git pull'
       - name: Prepare export script
-        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && chmod u+x ./export-yolov5-annotations.sh'
+        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && chmod u+x ./export-yolov5-annotations-on-full-images.sh'
