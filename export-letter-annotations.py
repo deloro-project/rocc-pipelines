@@ -1,12 +1,44 @@
 #!/usr/bin/env python
-"""Exports character annotations on full images into Yolo v5 format."""
+"""Exports letter annotations for training the letter classifier."""
 import argparse
 import logging
+import cv2 as cv
+import numpy as np
+from pathlib import Path
 import utils.database as db
+from utils.filesystem import create_export_structure
 
 
-def export_char_annotations(args):
-    """Export letter annotations under a single label.
+def read_image(image_path: str) -> any:
+    """Read the image from the specified path and apply transformations.
+
+    Parameters
+    ----------
+    image_path: str, required
+        The path of the image to read.
+    """ ""
+    img = cv.imread(image_path)
+    if img is None:
+        logging.error("Could not read image %s.", image_path)
+        return None
+
+    # Convert to grayscale.
+    grayscale = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    # Apply Gaussian blurr.
+    blur = cv.GaussianBlur(grayscale, (0, 0), sigmaX=33, sigmaY=33)
+    # Divide.
+    divide = cv.divide(grayscale, blur, scale=255)
+    # OTSU threshold.
+    threshold = cv.threshold(divide, 0, 255,
+                             cv.THRESH_BINARY + cv.THRESH_OTSU)[1]
+    # Apply morphology.
+    kernel = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
+    morph = cv.morphologyEx(threshold, cv.MORPH_CLOSE, kernel)
+    return morph
+
+
+def export_letter_annotations(args):
+    """Export letter annotations for classification training.
 
     Parameters
     ----------
@@ -20,6 +52,34 @@ def export_char_annotations(args):
         - image_size: int - the size of the exported image in pixels,
         - output_dir: str - the root directory of the export.
     """
+    df, _ = db.load_annotations(args.db_server, args.db_name, args.user,
+                                args.password)
+    df.sort_values(by='page_file_name', inplace=True)
+    staging_dir, train_dir, val_dir, _ = create_export_structure(
+        args.output_dir, export_type='letters')
+    print(df.columns)
+    page_file_name = None
+    for row in df.itertuples():
+        if page_file_name != row.page_file_name:
+            page_file_name = row.page_file_name
+            logging.info("Exporting letter annotations from %s.",
+                         page_file_name)
+            img = read_image(page_file_name)
+        if img is None:
+            continue
+
+        x, y = int(row.left_up_horiz), int(row.left_up_vert)
+        w, h = int(row.right_down_horiz), int(row.right_down_vert)
+        char_frame = img[y:h, x:w, ]
+        if 0 in char_frame.shape:
+            logging.error(
+                "Invalid values for bounding box of image %s: [%s, %s, %s, %s].",
+                row.letter_id, row.left_up_horiz, row.left_up_vert,
+                row.right_down_horiz, row.right_down_vert)
+            continue
+
+        cv.imwrite(str(staging_dir / "{}.png".format(row.letter_id)),
+                   char_frame)
     logging.info("That's all folks!")
 
 
@@ -27,7 +87,7 @@ def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description='Export annotations on full images for Yolo v5.')
-    parser.set_defaults(func=export_char_annotations)
+    parser.set_defaults(func=export_letter_annotations)
 
     parser.add_argument('--db-server',
                         help="Name or IP address of the database server.",
