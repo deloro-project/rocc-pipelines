@@ -133,21 +133,15 @@ def parse_arguments():
                         required=True)
 
     parser.add_argument(
-        '--port',
-        help="The port of the database server. Default value is 5432.",
-        default="5432")
-
-    parser.add_argument(
         '--output-dir',
         help="The output directory. Default value is './yolo-export'.",
         default='./yolo-export')
 
-    parser.add_argument('--image-size',
-                        help="""The size of the exported images.
-                        If omitted, the images will be exported in original resolution.""",
-                        type=int,
-                        nargs=2,
-                        default=None)
+    parser.add_argument(
+        '--min-samples-per-class',
+        help="Export class only if there are a minimum number of samples.",
+        type=int,
+        default=1000)
 
     parser.add_argument(
         '--log-level',
@@ -155,10 +149,6 @@ def parse_arguments():
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         default='INFO')
 
-    parser.add_argument(
-        '--debug',
-        help="Enable debug mode to load less data from database.",
-        action='store_true')
     return parser.parse_args()
 
 
@@ -166,6 +156,4 @@ if __name__ == '__main__':
     args = parse_arguments()
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                         level=getattr(logging, args.log_level))
-    db.DEBUG_MODE = args.debug
-    db.RANDOM_SEED = 2022
     args.func(args)
