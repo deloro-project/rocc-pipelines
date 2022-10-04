@@ -3,8 +3,7 @@
 import argparse
 import logging
 import cv2 as cv
-import numpy as np
-from pathlib import Path
+from pandas import DataFrame
 import utils.database as db
 from utils.filesystem import create_export_structure
 
@@ -32,6 +31,37 @@ def read_image(image_path: str) -> any:
     return grayscale
 
 
+def load_letters(db_server: str, db_name: str, user_name: str, password: str,
+                 min_samples: int) -> DataFrame:
+    """Load letters from the database and filter on number of samples.
+
+    Parameters
+    ----------
+    db_server : str, required
+        The name or IP address of the database server.
+    db_name : str, required
+        The name of the database containing annotations.
+    user_name : str, required
+        The username which is allowed to connect to the database.
+    password : str, required
+        The password of the username.
+    min_samples: int, required
+        The minimum number of samples a letter must have in order to be included in the export.
+
+    Returns
+    -------
+    letters: pandas.DataFrame
+        The DataFrame containing letter annotations.
+    """
+    df, _ = db.load_annotations(db_server, db_name, user_name, password)
+    # Remove samples labeled wth '#'
+    df = df[df.letter != '#']
+    # Remove samples with less than min occurrences
+    df = df.groupby(df.letter).filter(lambda grp: len(grp) >= min_samples)
+    # Remove non-letter samples
+    df = df[df.letter.str.isalpha()]
+    return df
+
 
 def export_letter_annotations(args):
     """Export letter annotations for classification training.
@@ -48,8 +78,8 @@ def export_letter_annotations(args):
         - image_size: int - the size of the exported image in pixels,
         - output_dir: str - the root directory of the export.
     """
-    df, _ = db.load_annotations(args.db_server, args.db_name, args.user,
-                                args.password)
+    df = load_letters(args.db_server, args.db_name, args.user, args.password,
+                      args.min_samples_per_class)
     df.sort_values(by='page_file_name', inplace=True)
     staging_dir, train_dir, val_dir, _ = create_export_structure(
         args.output_dir, export_type='letters')
