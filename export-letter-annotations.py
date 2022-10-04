@@ -16,7 +16,12 @@ def read_image(image_path: str) -> any:
     ----------
     image_path: str, required
         The path of the image to read.
-    """ ""
+
+    Returns
+    -------
+    img: Image
+        The image after being transformed; `None` if image doesn't exist.
+    """
     img = cv.imread(image_path)
     if img is None:
         logging.error("Could not read image %s.", image_path)
@@ -24,17 +29,8 @@ def read_image(image_path: str) -> any:
 
     # Convert to grayscale.
     grayscale = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    # Apply Gaussian blurr.
-    blur = cv.GaussianBlur(grayscale, (0, 0), sigmaX=33, sigmaY=33)
-    # Divide.
-    divide = cv.divide(grayscale, blur, scale=255)
-    # OTSU threshold.
-    threshold = cv.threshold(divide, 0, 255,
-                             cv.THRESH_BINARY + cv.THRESH_OTSU)[1]
-    # Apply morphology.
-    kernel = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
-    morph = cv.morphologyEx(threshold, cv.MORPH_CLOSE, kernel)
-    return morph
+    return grayscale
+
 
 
 def export_letter_annotations(args):
