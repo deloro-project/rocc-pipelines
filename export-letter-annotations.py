@@ -212,8 +212,8 @@ def parse_arguments():
 
     parser.add_argument(
         '--output-dir',
-        help="The output directory. Default value is './yolo-export'.",
-        default='./yolo-export')
+        help="The output directory. Default value is './export'.",
+        default='./export')
 
     parser.add_argument(
         '--min-samples-per-class',
