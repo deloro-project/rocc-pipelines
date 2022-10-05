@@ -29,5 +29,7 @@ jobs:
         run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && git checkout -- .'
       - name: Update pipelines
         run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && git pull'
-      - name: Prepare export script
+      - name: Prepare Yolo v5 export script
         run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && chmod u+x ./export-yolov5-annotations-on-full-images.sh'
+      - name: Prepare letter classification export script
+        run: ssh -p ${{secrets.SSH_PORT}} ${{secrets.USERNAME}}@${{secrets.HOST}} 'cd rocc-pipelines && chmod u+x ./export-letter-annotations.sh'
