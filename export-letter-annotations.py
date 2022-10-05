@@ -3,9 +3,16 @@
 import argparse
 import logging
 import cv2 as cv
+import shutil
+from pathlib import Path
 from pandas import DataFrame
+from typing import Iterable
+from sklearn.model_selection import train_test_split
 import utils.database as db
 from utils.filesystem import create_export_structure
+
+RANDOM_SEED = 2022
+TEST_SIZE = 0.2
 
 
 def read_image(image_path: str) -> any:
@@ -63,6 +70,88 @@ def load_letters(db_server: str, db_name: str, user_name: str, password: str,
     return df
 
 
+def export_annotation_cutouts(annotations: DataFrame,
+                              staging_dir: Path) -> DataFrame:
+    """Export annotation cutouts to staging directory.
+
+    Parameters
+    ----------
+    annotations: pandas.DataFrame, required
+        The data frame containing letter annotations.
+    staging_dir: pathlib.Path, required
+        The path of the staging directory.
+
+    Returns
+    -------
+    letters: pandas.DataFrame
+        A data frame containing labels and file names of exported cutouts.
+    """
+    page_file_name = None
+    letters = {'letter': [], 'file_name': []}
+    for row in annotations.itertuples():
+        if page_file_name != row.page_file_name:
+            page_file_name = row.page_file_name
+            logging.info("Exporting letter annotations from %s.",
+                         page_file_name)
+            img = read_image(page_file_name)
+        if img is None:
+            continue
+
+        x, y = int(row.left_up_horiz), int(row.left_up_vert)
+        w, h = int(row.right_down_horiz), int(row.right_down_vert)
+        char_frame = img[y:h, x:w, ]
+        if 0 in char_frame.shape:
+            logging.error(
+                "Invalid values for bounding box of image %s: [%s, %s, %s, %s].",
+                row.letter_id, row.left_up_horiz, row.left_up_vert,
+                row.right_down_horiz, row.right_down_vert)
+            continue
+
+        file_name = str(staging_dir / "{}.png".format(row.letter_id))
+        cv.imwrite(file_name, char_frame)
+        letters['letter'].append(row.letter)
+        letters['file_name'].append(file_name)
+
+    return DataFrame.from_dict(letters)
+
+
+def get_num_instances_to_sample(cutouts: DataFrame) -> int:
+    """Compute number of instances to sample for each letter.
+
+    Parameters
+    ----------
+    cutouts: pandas.DataFrame, required
+        The data frame containing labels and file names of letter cutouts.
+
+    Returns
+    -------
+    num_instances: int
+        The size of the smallest group of file names for each letter.
+    """
+    gr = cutouts.groupby(cutouts.letter).count()
+    num_instances = gr.sort_values(by='file_name', ascending=True).min()[0]
+    return num_instances
+
+
+def move_to_target_directory(files: Iterable[str], directory: Path):
+    """Move the specified files to target directory.
+
+    Parameters
+    ----------
+    files: iterable of str, required
+        The collection of files to move.
+    directory: Path, required
+        The target directory.
+    """
+    if not directory.exists():
+        logging.info("Creating directory %s.", str(directory))
+        directory.mkdir(parents=True, exist_ok=True)
+
+    for f in files:
+        file_path = Path(f)
+        file_path.rename(directory / file_path.name)
+
+
 def export_letter_annotations(args):
     """Export letter annotations for classification training.
 
@@ -83,29 +172,18 @@ def export_letter_annotations(args):
     df.sort_values(by='page_file_name', inplace=True)
     staging_dir, train_dir, val_dir, _ = create_export_structure(
         args.output_dir, export_type='letters')
-    print(df.columns)
-    page_file_name = None
-    for row in df.itertuples():
-        if page_file_name != row.page_file_name:
-            page_file_name = row.page_file_name
-            logging.info("Exporting letter annotations from %s.",
-                         page_file_name)
-            img = read_image(page_file_name)
-        if img is None:
-            continue
-
-        x, y = int(row.left_up_horiz), int(row.left_up_vert)
-        w, h = int(row.right_down_horiz), int(row.right_down_vert)
-        char_frame = img[y:h, x:w, ]
-        if 0 in char_frame.shape:
-            logging.error(
-                "Invalid values for bounding box of image %s: [%s, %s, %s, %s].",
-                row.letter_id, row.left_up_horiz, row.left_up_vert,
-                row.right_down_horiz, row.right_down_vert)
-            continue
-
-        cv.imwrite(str(staging_dir / "{}.png".format(row.letter_id)),
-                   char_frame)
+    df = export_annotation_cutouts(df, staging_dir)
+    num_instances = get_num_instances_to_sample(df)
+    for letter in df.letter.unique():
+        sample = df[df.letter == letter].sample(n=num_instances,
+                                                random_state=RANDOM_SEED)
+        train, test = train_test_split([f for f in sample.file_name],
+                                       test_size=TEST_SIZE,
+                                       random_state=RANDOM_SEED)
+        move_to_target_directory(train, train_dir / letter)
+        move_to_target_directory(test, val_dir / letter)
+    logging.info("Removing staging directory %s.", str(staging_dir))
+    shutil.rmtree(staging_dir)
     logging.info("That's all folks!")
 
 
