@@ -3,7 +3,7 @@
 import argparse
 import logging
 import utils.database as db
-from utils.exportutils import create_directories
+from utils.filesystem import create_export_structure
 from utils.exportutils import export_image, export_yolov5_annotation
 from utils.exportutils import save_dataset_description, blur_out_negative_samples
 from utils.exportutils import get_cv2_image_size
@@ -18,32 +18,6 @@ from sklearn.model_selection import train_test_split
 DEBUG_MODE = False
 RANDOM_SEED = 2022
 TEST_SIZE = 0.2
-
-
-def create_export_directories(output_directory, export_type):
-    """Create directory structure for export.
-
-    Parameters
-    ----------
-    output_directory: str, required
-        The root directory where export data will reside.
-    export_type: str, required
-        The type of export; can be either 'letters', 'characters', or 'lines'.
-        Default is 'letters'.
-
-    Returns
-    -------
-    (train_dir, val_dir, yaml_file): tuple of pathlib.Path
-        The directories for training data, validation data,
-        and path of the dataset description file respectively.
-    """
-    export_dir = Path(args.output_dir) / export_type
-    staging_dir = export_dir / 'staging_dir'
-    train_dir = export_dir / 'train'
-    val_dir = export_dir / 'val'
-    yaml_file = export_dir / '{}.yaml'.format(export_type)
-    create_directories(staging_dir, train_dir, val_dir)
-    return staging_dir, train_dir, val_dir, yaml_file
 
 
 def get_export_file_names(image_path):
@@ -139,7 +113,7 @@ def export_char_annotations(args):
                                             top_labels=None)
     letters_df.letter = 'char'
     logging.info("Creating export directories for letter annotations.")
-    staging_dir, train_dir, val_dir, yaml_file = create_export_directories(
+    staging_dir, train_dir, val_dir, yaml_file = create_export_structure(
         args.output_dir, export_type='characters')
 
     logging.info("Exporting data to staging directory {}.".format(

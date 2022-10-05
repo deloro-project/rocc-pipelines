@@ -10,23 +10,6 @@ from tempfile import NamedTemporaryFile
 from utils.yolov5utils import iterate_labels, translate_coordinates, iterate_yolo_directory
 
 
-def create_directories(*paths):
-    """Create directory structure for the specified path.
-
-    Parameters
-    ----------
-    paths: tuple of pathlib.Path, required
-        The paths for which to create directories.
-    """
-    for path in paths:
-        if path.exists():
-            logging.info("Path {} already exists.".format(str(path)))
-            continue
-
-        logging.info("Creating directory {}.".format(str(path)))
-        path.mkdir(parents=True, exist_ok=True)
-
-
 def scale_point(point, original_size, export_size):
     """Scale the given point from the original image size to the exported image size.
 
