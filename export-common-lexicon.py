@@ -151,7 +151,7 @@ def is_valid_token(token):
         True if token is valid; False otherwise.
     """
     # Remove spaces from token
-    token = token.replace(' ', '')
+    token = token.replace(' ', '').replace('$', '')
     if len(token) == 0:
         return False
     if re.search(r'[0-9\.,?=:/"]', token):
