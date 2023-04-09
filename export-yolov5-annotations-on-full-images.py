@@ -6,7 +6,7 @@ import utils.database as db
 from utils.filesystem import create_export_structure
 from utils.exportutils import export_image, export_yolov5_annotation
 from utils.exportutils import save_dataset_description, blur_out_negative_samples
-from utils.exportutils import get_cv2_image_size
+from utils.imageutils import get_cv2_image_size
 from utils.yolov5utils import iterate_yolo_directory
 from utils.exportutils import move_images_and_labels
 from pathlib import Path
