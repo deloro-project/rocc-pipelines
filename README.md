@@ -272,3 +272,74 @@ where:
   - `yolov5m.pt`
   - `yolov5l.pt`
   - `yolov5x.pt`.
+
+
+### Export Image Cutouts ###
+
+- **Script name**: [export-image-cutouts.py](./export-image-cutouts.py)
+- **Description**: This script creates image cutouts from the images in the input directory and exports the cutouts alongside their metadata into the output directory.
+
+#### Usage  ####
+
+To get the list of the script parameters with their description call the script with either `-h` or `--help` *after activating the virtual environment*.
+
+```sh
+python export-image-cutouts.py --help
+```
+
+The output of the command above should look like the following:
+```sh
+usage: export-image-cutouts.py [-h] --input-dir INPUT_DIR [--output-dir OUTPUT_DIR] [--window-size WINDOW_SIZE] [--horizontal-stride HORIZONTAL_STRIDE] [--vertical-stride VERTICAL_STRIDE]
+                               [--metadata-file METADATA_FILE] [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Generate windows from images.
+
+options:
+  -h, --help            show this help message and exit
+  --input-dir INPUT_DIR
+                        The input directory.
+  --output-dir OUTPUT_DIR
+                        The output directory. Default value is './segmented-images'.
+  --window-size WINDOW_SIZE
+                        The size of the image windows.
+  --horizontal-stride HORIZONTAL_STRIDE
+                        The horizontal stride.
+  --vertical-stride VERTICAL_STRIDE
+                        The vertical stride.
+  --metadata-file METADATA_FILE
+                        The path of the CSV file containing window metadata.
+  --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        The level of details to print when running.
+```
+
+To run the script, *activate the virtual environment* and then issue the following command
+```sh
+python export-image-cutouts.py \
+       --input-dir <input-directory> \
+       --output-dir <output-directory> \
+       --window-size <window-size> \
+       --horizontal-stride <horizontal-stride> \
+       --vertical-stride <vertical-stride> \
+       --metadata-file <metadata-file>
+```
+where:
+- `<input-directory>` is the path of the directory containing images to export,
+- `<output-directory>` is the path of the directory where to export image cutouts,
+- `<window-size>` is an optional value for the image size; if omitted the default value is 320,
+- `<horizontal-stride>` is an optional value for the horizontal stride; if omitted the default value is 140,
+- `<vertical-stride>` is an optional value for the vertical stride; if mitted the default value is 160,
+- `<metadata-file>` is an optional value for the CSV file where to store metadata of the exported cutouts; if omitted the default value is `metadata.csv`.
+
+The command above will export the window cutouts and their metadata into the `<output-directory>`, and `<output-directory>/<metadata-file>` respectively.
+
+The metadata file contains the following columns:
+| Column name    | Contents                                                  |
+|:---------------|:----------------------------------------------------------|
+| image_width    | The width of the original image.                          |
+| image_height   | The height of the original image.                         |
+| window_name    | The file name of the cutout corresponding to current row. |
+| window_size    | The size of the cutout window.                            |
+| top_left_x     | The X coordinate of the top-left point.                   |
+| top_left_y     | The Y coordinate of the top-left point.                   |
+| bottom_right_x | The X coordinate of the bottom-right point.               |
+| bottom_right_y | The Y coordinate of the bottom-right point.               |
