@@ -14,5 +14,6 @@ def get_cv2_image_size(image):
     (width, height): tuple of (int, int)
         The size of the image in (width, height) format.
     """
-    height, width, _ = image.shape
+    height, width, *_ = image.shape
     return (width, height)
+
