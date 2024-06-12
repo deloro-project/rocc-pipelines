@@ -25,7 +25,7 @@ opencv-python==4.5.5.64
 packaging==21.3
 pathy==0.6.1
 preshed==3.0.6
-pydantic==1.8.2
+pydantic==1.10.13
 pyparsing==3.0.8
 requests==2.31.0
 scikit-learn==1.0.2
