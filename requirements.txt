@@ -28,7 +28,7 @@ preshed==3.0.6
 pydantic==1.10.13
 pyparsing==3.0.8
 requests==2.32.2
-scikit-learn==1.0.2
+scikit-learn==1.5.0
 scipy==1.10.0
 smart-open==5.2.1
 spacy-legacy==3.0.9
